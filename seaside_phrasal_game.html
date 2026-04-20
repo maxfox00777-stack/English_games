@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seaside & Phrasal Verbs</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #f4f3ee; color: #1a1a1a; min-height: 100vh; }
+
+  .header { background: #fff; border-bottom: 1px solid #e5e4de; padding: 1rem; text-align: center; position: sticky; top: 0; z-index: 10; }
+  .header h1 { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+  .stages { display: flex; gap: 8px; justify-content: center; }
+  .stage-dot { width: 36px; height: 6px; border-radius: 99px; background: #e0dfd8; transition: background 0.3s; }
+  .stage-dot.active { background: #7C3AED; }
+  .stage-dot.done   { background: #3B6D11; }
+  .stage-label { font-size: 12px; color: #888; margin-top: 6px; }
+
+  .screen { display: none; padding: 1.2rem 1rem 2rem; max-width: 520px; margin: 0 auto; }
+  .screen.show { display: block; }
+  .stage-title { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+  .stage-sub   { font-size: 13px; color: #666; margin-bottom: 1.2rem; line-height: 1.5; }
+
+  /* MATCH */
+  .match-score { text-align: center; font-size: 13px; color: #666; margin-bottom: .4rem; }
+  .match-hint  { text-align: center; font-size: 12px; color: #7C3AED; min-height: 16px; margin-bottom: .8rem; font-weight: 500; }
+  .match-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .match-card {
+    padding: 10px 8px; border-radius: 10px; border: 1.5px solid #ddd;
+    background: #fff; font-size: 13px; cursor: pointer; text-align: center;
+    transition: all 0.15s; line-height: 1.4; user-select: none;
+  }
+  .match-card:active { transform: scale(0.96); }
+  .match-card.sel     { border-color: #7C3AED; background: #F5F3FF; color: #4C1D95; box-shadow: 0 0 0 2px #7C3AED30; }
+  .match-card.matched { opacity: 0; pointer-events: none; transition: opacity 0.4s; }
+  .match-card.wrong   { border-color: #E24B4A; background: #FCEBEB; color: #791F1F; animation: shake .3s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+
+  /* PHRASAL */
+  .prog-wrap { background: #e0dfd8; border-radius: 99px; height: 5px; margin-bottom: 1.2rem; }
+  .prog-bar  { height: 5px; border-radius: 99px; background: #7C3AED; transition: width 0.35s; }
+  .q-prog    { text-align: center; font-size: 13px; color: #888; margin-bottom: 1rem; }
+
+  .phrasal-card {
+    background: #fff; border: 1px solid #e5e4de; border-radius: 14px;
+    padding: 1.4rem 1rem; text-align: center; margin-bottom: 1.2rem;
+  }
+  .phrasal-verb { font-size: 26px; font-weight: 700; color: #7C3AED; margin-bottom: 6px; }
+  .phrasal-ru   { font-size: 15px; color: #444; line-height: 1.5; }
+  .phrasal-hint { font-size: 12px; color: #aaa; margin-top: 6px; }
+
+  .preps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1.2rem; }
+  .prep-btn {
+    padding: 14px 8px; border-radius: 10px; border: 1.5px solid #ddd;
+    background: #fff; font-size: 16px; font-weight: 600; cursor: pointer;
+    text-align: center; transition: all .15s; font-family: inherit; color: #1a1a1a;
+  }
+  .prep-btn:active { transform: scale(.97); }
+  .prep-btn.correct { background: #EAF3DE; border-color: #639922; color: #27500A; }
+  .prep-btn.wrong   { background: #FCEBEB; border-color: #E24B4A; color: #791F1F; }
+  .prep-btn.reveal  { background: #EAF3DE; border-color: #639922; color: #27500A; }
+  .prep-btn.dim     { opacity: .35; pointer-events: none; }
+
+  .feedback-line { text-align: center; font-size: 14px; font-weight: 500; min-height: 20px; margin-bottom: .8rem; }
+  .feedback-line.ok  { color: #3B6D11; }
+  .feedback-line.err { color: #A32D2D; }
+
+  /* LISTEN & TYPE */
+  .listen-center { text-align: center; margin: .5rem 0 1.5rem; }
+  .listen-btn {
+    width: 76px; height: 76px; border-radius: 50%; border: none;
+    background: #7C3AED; color: #fff; font-size: 30px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 16px #7C3AED40; transition: transform .15s, background .15s;
+  }
+  .listen-btn:active { transform: scale(.93); background: #6D28D9; }
+  .listen-btn.speaking { background: #5B21B6; animation: pulse .8s infinite alternate; }
+  @keyframes pulse { from{box-shadow:0 4px 16px #7C3AED40} to{box-shadow:0 4px 28px #7C3AED90} }
+  .listen-sub { font-size: 12px; color: #999; margin-top: 8px; }
+
+  .ru-sentence { background: #fff; border: 1px solid #e5e4de; border-radius: 12px; padding: 1rem; text-align: center; font-size: 15px; color: #444; margin-bottom: 1rem; line-height: 1.6; }
+  .ru-label { font-size: 11px; color: #aaa; margin-bottom: 4px; }
+
+  .type-input {
+    width: 100%; padding: 12px 14px; border-radius: 10px; border: 1.5px solid #ddd;
+    font-size: 15px; font-family: inherit; background: #fff; color: #1a1a1a;
+    margin-bottom: .8rem; outline: none; transition: border-color .15s;
+  }
+  .type-input:focus   { border-color: #7C3AED; }
+  .type-input.correct { border-color: #639922; background: #EAF3DE; color: #27500A; }
+  .type-input.wrong   { border-color: #E24B4A; background: #FCEBEB; }
+
+  .correct-ans { font-size: 13px; color: #3B6D11; background: #EAF3DE; border-radius: 8px; padding: 8px 12px; margin-bottom: .8rem; display: none; }
+
+  /* SHARED */
+  .next-btn {
+    display: block; width: 100%; padding: 13px; border-radius: 10px;
+    border: none; background: #7C3AED; color: #fff; font-size: 15px;
+    cursor: pointer; font-family: inherit; transition: background .15s;
+  }
+  .next-btn:active   { background: #6D28D9; }
+  .next-btn:disabled { background: #ccc; cursor: default; }
+
+  /* FINISH */
+  #screen-finish { text-align: center; padding: 3rem 1rem; }
+  .fin-emoji { font-size: 56px; margin-bottom: 12px; }
+  .fin-title { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+  .fin-sub   { font-size: 14px; color: #666; margin-bottom: 1.8rem; line-height: 1.7; }
+  .fin-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 1.8rem; }
+  .fin-stat  { background: #fff; border: 1px solid #e5e4de; border-radius: 10px; padding: 12px 6px; }
+  .fin-stat-n { font-size: 22px; font-weight: 600; }
+  .fin-stat-l { font-size: 11px; color: #999; margin-top: 2px; }
+  .fin-stat-n.g { color: #3B6D11; } .fin-stat-n.r { color: #A32D2D; } .fin-stat-n.p { color: #7C3AED; }
+  .restart-btn { padding: 13px 36px; border-radius: 10px; border: none; background: #7C3AED; color: #fff; font-size: 15px; cursor: pointer; font-family: inherit; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🌊 Seaside & Phrasal Verbs</h1>
+  <div class="stages">
+    <div class="stage-dot active" id="dot-1"></div>
+    <div class="stage-dot" id="dot-2"></div>
+    <div class="stage-dot" id="dot-3"></div>
+  </div>
+  <div class="stage-label" id="stage-label">Этап 1 из 3</div>
+</div>
+
+<!-- STAGE 1: MATCH -->
+<div class="screen show" id="screen-1">
+  <div class="stage-title">🔗 Соедини слово с переводом</div>
+  <div class="stage-sub">Нажми на английское слово, затем на его перевод</div>
+  <div class="match-score">Найдено: <span id="m-found">0</span> / 11</div>
+  <div class="match-hint" id="m-hint"></div>
+  <div class="match-grid" id="match-grid"></div>
+</div>
+
+<!-- STAGE 2: PHRASAL VERBS -->
+<div class="screen" id="screen-2">
+  <div class="stage-title">🔧 Фразовый глагол SET</div>
+  <div class="stage-sub">Посмотри на перевод и выбери правильный предлог</div>
+  <div class="prog-wrap"><div class="prog-bar" id="prog-2" style="width:0%"></div></div>
+  <div class="q-prog" id="q-prog2">Вопрос 1 из 4</div>
+  <div class="phrasal-card">
+    <div class="phrasal-verb">set ___</div>
+    <div class="phrasal-ru" id="ph-ru"></div>
+    <div class="phrasal-hint" id="ph-hint"></div>
+  </div>
+  <div class="preps-grid" id="preps-grid"></div>
+  <div class="feedback-line" id="fb2"></div>
+  <button class="next-btn" id="next2" onclick="handleNext2()" disabled>Следующий →</button>
+</div>
+
+<!-- STAGE 3: LISTEN & TYPE -->
+<div class="screen" id="screen-3">
+  <div class="stage-title">🎧 Послушай и напиши</div>
+  <div class="stage-sub">Нажми на кнопку, послушай предложение и напиши его по-английски</div>
+  <div class="prog-wrap"><div class="prog-bar" id="prog-3" style="width:0%"></div></div>
+  <div class="q-prog" id="q-prog3">Предложение 1 из 3</div>
+  <div class="listen-center">
+    <button class="listen-btn" id="lb3" onclick="speak3()">🔊</button>
+    <div class="listen-sub" id="ls3">Нажми, чтобы послушать</div>
+  </div>
+  <div class="ru-sentence">
+    <div class="ru-label">Перевод для подсказки</div>
+    <div id="ru-hint3"></div>
+  </div>
+  <textarea class="type-input" id="type-input3" rows="3" placeholder="Напиши предложение здесь..." autocomplete="off" autocorrect="off" spellcheck="false" style="resize:none;"></textarea>
+  <div class="correct-ans" id="correct-ans3"></div>
+  <div class="feedback-line" id="fb3"></div>
+  <button class="next-btn" id="next3" onclick="handleNext3()" disabled>Проверить</button>
+</div>
+
+<!-- FINISH -->
+<div class="screen" id="screen-finish">
+  <div class="fin-emoji" id="fin-emoji"></div>
+  <div class="fin-title" id="fin-title"></div>
+  <div class="fin-sub" id="fin-sub"></div>
+  <div class="fin-stats">
+    <div class="fin-stat"><div class="fin-stat-n g" id="fs-c">0</div><div class="fin-stat-l">верных</div></div>
+    <div class="fin-stat"><div class="fin-stat-n r" id="fs-w">0</div><div class="fin-stat-l">ошибок</div></div>
+    <div class="fin-stat"><div class="fin-stat-n p">7</div><div class="fin-stat-l">заданий</div></div>
+  </div>
+  <button class="restart-btn" onclick="restartGame()">Начать заново</button>
+</div>
+
+<script>
+// ── DATA ──
+const matchWords = [
+  { en: 'wife',              ru: 'жена' },
+  { en: 'inquire',           ru: 'интересоваться' },
+  { en: 'wonder',            ru: 'задаваться вопросом' },
+  { en: 'ask',               ru: 'спрашивать' },
+  { en: 'drive crazy',       ru: 'сводить с ума' },
+  { en: 'beaten track',      ru: 'проторенный маршрут' },
+  { en: 'seaside',           ru: 'побережье' },
+  { en: 'monuments',         ru: 'памятники' },
+  { en: 'board',             ru: 'садиться на борт' },
+  { en: 'luxury development',ru: 'элитная застройка' },
+  { en: 'amusement',         ru: 'развлечение' },
+];
+
+const phrasalVerbs = [
+  { prep: 'aside', ru: 'откладывать (деньги или время)', example: 'set aside money for a trip' },
+  { prep: 'in',    ru: 'наступать, устанавливаться (о погоде, сезоне, болезни)', example: 'winter has set in' },
+  { prep: 'off',   ru: 'отправляться в путь', example: 'we set off early in the morning' },
+  { prep: 'back',  ru: 'задерживать, отбрасывать назад', example: 'the storm set us back by two days' },
+];
+
+const sentences = [
+  {
+    en: 'There are a lot of monuments at the seaside.',
+    ru: 'На побережье много памятников.'
+  },
+  {
+    en: 'The captain inquired if I was going to board the ship.',
+    ru: 'Капитан поинтересовался, собираюсь ли я подняться на борт корабля.'
+  },
+  {
+    en: 'He prefers walking only on beaten tracks.',
+    ru: 'Он предпочитает ходить только по проторенным маршрутам.'
+  },
+];
+
+const matchColors = [
+  '#E6F1FB:#185FA5','#E1F5EE:#0F6E56','#FAEEDA:#854F0B','#F5F3FF:#4C1D95',
+  '#EAF3DE:#3B6D11','#FAECE7:#993C1D','#FEF3C7:#92400E','#FCE7F3:#9D174D',
+  '#ECFDF5:#065F46','#EFF6FF:#1D4ED8','#FDF4FF:#7E22CE'
+];
+
+let totalCorrect = 0, totalWrong = 0;
+function shuffle(arr) { return [...arr].sort(() => Math.random() - .5); }
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('show'));
+  document.getElementById('screen-' + id).classList.add('show');
+  const labels = { 1:'Этап 1 из 3 — Сопоставь', 2:'Этап 2 из 3 — Фразовые глаголы', 3:'Этап 3 из 3 — Послушай и напиши', finish:'Готово!' };
+  document.getElementById('stage-label').textContent = labels[id] || '';
+  ['dot-1','dot-2','dot-3'].forEach((d,i) => {
+    const el = document.getElementById(d);
+    el.className = 'stage-dot';
+    if (id === 'finish') { el.classList.add('done'); return; }
+    const n = parseInt(id);
+    if (i+1 < n) el.classList.add('done');
+    else if (i+1 === n) el.classList.add('active');
+  });
+}
+
+// ══ STAGE 1 ══
+let mSelEn=null, mSelRu=null, mMatched=0;
+
+function initMatch() {
+  mSelEn=null; mSelRu=null; mMatched=0;
+  document.getElementById('m-found').textContent=0;
+  document.getElementById('m-hint').textContent='';
+  const grid = document.getElementById('match-grid');
+  grid.innerHTML='';
+  const enList = shuffle(matchWords.map(w=>w.en));
+  const ruList = shuffle(matchWords.map(w=>w.ru));
+  for (let i=0; i<matchWords.length; i++) {
+    grid.appendChild(makeCard('en', enList[i]));
+    grid.appendChild(makeCard('ru', ruList[i]));
+  }
+}
+
+function makeCard(type, word) {
+  const el = document.createElement('div');
+  el.className = 'match-card '+type+'-card';
+  el.id = (type==='en'?'men-':'mru-') + word.replace(/[^a-zа-яё]/gi,'_');
+  el.textContent = word;
+  el.onclick = () => tapCard(type, word, el);
+  return el;
+}
+
+function tapCard(type, word, el) {
+  if (el.classList.contains('matched')) return;
+  document.querySelectorAll('.'+type+'-card').forEach(c=>c.classList.remove('sel'));
+  if (type==='en') { if(mSelEn===word){mSelEn=null;setHint('');return;} mSelEn=word; }
+  else             { if(mSelRu===word){mSelRu=null;setHint('');return;} mSelRu=word; }
+  el.classList.add('sel');
+  if (type==='en'&&!mSelRu) setHint('Теперь выбери перевод');
+  if (type==='ru'&&!mSelEn) setHint('Теперь выбери английское слово');
+  if (mSelEn&&mSelRu) checkPair();
+}
+
+function setHint(t) { document.getElementById('m-hint').textContent=t; }
+
+function checkPair() {
+  const pair = matchWords.find(w=>w.en===mSelEn);
+  const ok = pair && pair.ru===mSelRu;
+  const enEl = document.getElementById('men-'+mSelEn.replace(/[^a-zа-яё]/gi,'_'));
+  const ruEl = document.getElementById('mru-'+mSelRu.replace(/[^a-zа-яё]/gi,'_'));
+  if (ok) {
+    mMatched++;
+    document.getElementById('m-found').textContent=mMatched;
+    const col = matchColors[(mMatched-1)%matchColors.length].split(':');
+    [enEl,ruEl].forEach(el=>{
+      el.style.background=col[0]; el.style.borderColor=col[1]; el.style.color=col[1];
+      el.classList.remove('sel'); el.classList.add('matched');
+    });
+    setHint('');
+    if (mMatched===matchWords.length) setTimeout(()=>{showScreen(2);initPhrasal();},600);
+  } else {
+    [enEl,ruEl].forEach(el=>{el.classList.remove('sel');el.classList.add('wrong');setTimeout(()=>el.classList.remove('wrong'),400);});
+    setHint('Не совпадает — попробуй ещё!');
+  }
+  mSelEn=null; mSelRu=null;
+}
+
+// ══ STAGE 2 ══
+let phQueue=[], phIdx=0, phCurrent=null, phAnswered=false, phCorrect=0;
+
+function initPhrasal() {
+  phQueue=shuffle([...phrasalVerbs]);
+  phIdx=0; phCorrect=0; phAnswered=false;
+  loadPhrasal();
+}
+
+function loadPhrasal() {
+  phCurrent=phQueue[phIdx];
+  phAnswered=false;
+  document.getElementById('ph-ru').textContent=phCurrent.ru;
+  document.getElementById('ph-hint').textContent='Пример: '+phCurrent.example;
+  document.getElementById('q-prog2').textContent=`Вопрос ${phIdx+1} из ${phQueue.length}`;
+  document.getElementById('prog-2').style.width=(phIdx/phQueue.length*100)+'%';
+  document.getElementById('fb2').textContent='';
+  document.getElementById('fb2').className='feedback-line';
+  document.getElementById('next2').disabled=true;
+  const grid=document.getElementById('preps-grid');
+  grid.innerHTML='';
+  shuffle(['aside','in','off','back']).forEach(prep=>{
+    const btn=document.createElement('button');
+    btn.className='prep-btn'; btn.textContent=prep;
+    btn.onclick=()=>checkPhrasal(prep,btn);
+    grid.appendChild(btn);
+  });
+}
+
+function checkPhrasal(prep, btn) {
+  if (phAnswered) return;
+  phAnswered=true;
+  const ok=prep===phCurrent.prep;
+  const fb=document.getElementById('fb2');
+  document.querySelectorAll('.prep-btn').forEach(b=>{
+    if (b.textContent===phCurrent.prep) b.classList.add(ok?'correct':'reveal');
+    else if (b===btn&&!ok) b.classList.add('wrong');
+    else b.classList.add('dim');
+  });
+  if (ok) { fb.textContent='✓ Верно! set '+prep; fb.className='feedback-line ok'; phCorrect++; totalCorrect++; }
+  else    { fb.textContent='✗ Правильно: set '+phCurrent.prep; fb.className='feedback-line err'; totalWrong++; }
+  document.getElementById('next2').disabled=false;
+}
+
+function handleNext2() {
+  phIdx++;
+  if (phIdx>=phQueue.length) { showScreen(3); initStage3(); }
+  else loadPhrasal();
+}
+
+// ══ STAGE 3 ══
+const synth=window.speechSynthesis;
+let voices=[];
+speechSynthesis.onvoiceschanged=()=>{ voices=synth.getVoices(); };
+voices=synth.getVoices();
+
+let s3Queue=[], s3Idx=0, s3Current=null, s3Checked=false, s3Correct=0;
+
+function initStage3() {
+  s3Queue=[...sentences];
+  s3Idx=0; s3Correct=0; s3Checked=false;
+  loadSentence();
+}
+
+function speak3() {
+  if (!s3Current) return;
+  synth.cancel();
+  const utt=new SpeechSynthesisUtterance(s3Current.en);
+  utt.lang='en-US'; utt.rate=0.78;
+  const v=voices.find(v=>v.lang==='en-US')||voices.find(v=>v.lang.startsWith('en'));
+  if (v) utt.voice=v;
+  const btn=document.getElementById('lb3');
+  const sub=document.getElementById('ls3');
+  btn.classList.add('speaking');
+  sub.textContent='Слушай...';
+  utt.onend=()=>{ btn.classList.remove('speaking'); sub.textContent='Нажми ещё раз, чтобы повторить'; };
+  synth.speak(utt);
+}
+
+function loadSentence() {
+  s3Current=s3Queue[s3Idx];
+  s3Checked=false;
+  document.getElementById('q-prog3').textContent=`Предложение ${s3Idx+1} из ${s3Queue.length}`;
+  document.getElementById('prog-3').style.width=(s3Idx/s3Queue.length*100)+'%';
+  document.getElementById('ru-hint3').textContent=s3Current.ru;
+  document.getElementById('fb3').textContent='';
+  document.getElementById('fb3').className='feedback-line';
+  document.getElementById('correct-ans3').style.display='none';
+  document.getElementById('next3').textContent='Проверить';
+  document.getElementById('next3').disabled=true;
+  document.getElementById('ls3').textContent='Нажми, чтобы послушать';
+  document.getElementById('lb3').classList.remove('speaking');
+  const inp=document.getElementById('type-input3');
+  inp.value=''; inp.className='type-input'; inp.disabled=false;
+  setTimeout(()=>{ speak3(); },400);
+}
+
+document.getElementById('type-input3').addEventListener('input',function(){
+  if (!s3Checked) document.getElementById('next3').disabled=this.value.trim().length===0;
+});
+
+function normalize(str) {
+  return str.toLowerCase().replace(/[.,!?'"]/g,'').replace(/\s+/g,' ').trim();
+}
+
+function handleNext3() {
+  if (!s3Checked) checkSentence();
+  else nextSentence();
+}
+
+function checkSentence() {
+  const inp=document.getElementById('type-input3');
+  const answer=normalize(inp.value);
+  const correct=normalize(s3Current.en);
+  s3Checked=true; inp.disabled=true;
+  const fb=document.getElementById('fb3');
+  const next=document.getElementById('next3');
+  const ansBox=document.getElementById('correct-ans3');
+  if (answer===correct) {
+    inp.classList.add('correct');
+    fb.textContent='✓ Верно!'; fb.className='feedback-line ok';
+    s3Correct++; totalCorrect++;
+  } else {
+    inp.classList.add('wrong');
+    fb.textContent='✗ Не совсем точно'; fb.className='feedback-line err';
+    ansBox.textContent='Правильно: '+s3Current.en;
+    ansBox.style.display='block';
+    totalWrong++;
+  }
+  next.textContent=s3Idx+1>=s3Queue.length?'Завершить 🎉':'Следующее →';
+  next.disabled=false;
+}
+
+function nextSentence() {
+  s3Idx++;
+  if (s3Idx>=s3Queue.length) showFinish();
+  else loadSentence();
+}
+
+function showFinish() {
+  const total=4+3;
+  const pct=Math.round(totalCorrect/total*100);
+  const emoji=pct===100?'🏆':pct>=80?'🎉':pct>=50?'💪':'📚';
+  const title=pct===100?'Идеально!':pct>=80?'Отлично!':pct>=50?'Хорошая работа!':'Продолжай тренироваться!';
+  document.getElementById('fin-emoji').textContent=emoji;
+  document.getElementById('fin-title').textContent=title;
+  document.getElementById('fin-sub').innerHTML=`Правильных ответов: <strong>${totalCorrect} из ${total}</strong> (${pct}%)`;
+  document.getElementById('fs-c').textContent=totalCorrect;
+  document.getElementById('fs-w').textContent=totalWrong;
+  showScreen('finish');
+}
+
+function restartGame() {
+  totalCorrect=0; totalWrong=0;
+  showScreen(1); initMatch();
+}
+
+initMatch();
+</script>
+</body>
+</html>
