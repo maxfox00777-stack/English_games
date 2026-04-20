@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Present Simple vs Present Continuous</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #f5f5f0; color: #1a1a1a; padding: 1.5rem 1rem; }
+  h1 { text-align: center; font-size: 20px; font-weight: 500; margin-bottom: 6px; }
+  .subtitle { text-align: center; font-size: 13px; color: #666; margin-bottom: 0.8rem; line-height: 1.5; }
+  .hint { text-align: center; font-size: 12px; color: #7C3AED; min-height: 18px; margin-bottom: 0.8rem; font-weight: 500; }
+  .pool-label { font-size: 13px; color: #666; text-align: center; margin-bottom: 8px; }
+
+  .card-pool {
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+    margin-bottom: 1.2rem; padding: 0.8rem;
+    background: #eeeee8; border-radius: 12px; min-height: 48px;
+  }
+
+  .columns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.2rem; }
+  .col { background: #fff; border: 1px solid #ddd; border-radius: 12px; padding: 0.8rem; min-height: 200px; cursor: pointer; }
+  .col-title { font-size: 14px; font-weight: 500; text-align: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #eee; pointer-events: none; }
+  .col.simple .col-title { color: #185FA5; }
+  .col.cont .col-title   { color: #0F6E56; }
+  .drop-zone { min-height: 120px; display: flex; flex-direction: column; gap: 7px; padding: 4px; border-radius: 8px; transition: background 0.15s; pointer-events: none; }
+  .drop-zone.over { background: #f0f0ea; }
+
+  .card {
+    padding: 8px 12px; border-radius: 8px; border: 1.5px solid #ccc;
+    background: #fff; font-size: 13px; cursor: grab; user-select: none;
+    color: #1a1a1a; transition: transform 0.1s, border-color 0.15s, background 0.15s;
+    text-align: center; line-height: 1.4; white-space: pre-line;
+  }
+  .card:active { cursor: grabbing; transform: scale(0.96); }
+  .card.selected    { border-color: #7C3AED; background: #F5F3FF; color: #4C1D95; box-shadow: 0 0 0 2px #7C3AED30; }
+  .card.placed-simple { background: #E6F1FB; border-color: #378ADD; color: #0C447C; }
+  .card.placed-cont   { background: #E1F5EE; border-color: #1D9E75; color: #085041; }
+  .card.correct { background: #EAF3DE; border-color: #639922; color: #27500A; }
+  .card.wrong   { background: #FCEBEB; border-color: #E24B4A; color: #791F1F; }
+
+  .btns { display: flex; gap: 10px; justify-content: center; margin-bottom: 1rem; }
+  button { padding: 9px 22px; border-radius: 8px; border: 1px solid #ccc; background: #fff; font-size: 14px; cursor: pointer; color: #1a1a1a; }
+  button:active { background: #eeeee8; }
+  .result-msg { text-align: center; font-size: 14px; font-weight: 500; min-height: 20px; }
+</style>
+</head>
+<body>
+
+<h1>Present Simple vs Continuous</h1>
+<p class="subtitle" id="subtitle">На компьютере — перетащи. На телефоне — тапни карточку, затем столбец.</p>
+<div class="hint" id="hint"></div>
+
+<div class="pool-label">Карточки</div>
+<div class="card-pool" id="pool"></div>
+
+<div class="columns">
+  <div class="col simple" id="col-simple">
+    <div class="col-title">Present Simple</div>
+    <div class="drop-zone" id="zone-simple" data-col="simple"></div>
+  </div>
+  <div class="col cont" id="col-cont">
+    <div class="col-title">Present Continuous</div>
+    <div class="drop-zone" id="zone-cont" data-col="cont"></div>
+  </div>
+</div>
+
+<div class="btns">
+  <button onclick="checkAnswers()">Проверить</button>
+  <button onclick="resetAll()">Сначала</button>
+</div>
+<div class="result-msg" id="msg"></div>
+
+<script>
+const items = [
+  { id:'c1',  text:'глагол to be\n(am/is/are)',     answer:'cont'   },
+  { id:'c2',  text:'окончание\n-ing',               answer:'cont'   },
+  { id:'c3',  text:'вспомогательный\ndo/does',      answer:'simple' },
+  { id:'c4',  text:'слово\nnow / right now',        answer:'cont'   },
+  { id:'c5',  text:'every day /\nalways',           answer:'simple' },
+  { id:'c6',  text:'окончание -s/-es\nу he/she/it', answer:'simple' },
+  { id:'c7',  text:'look! /\nlisten!',              answer:'cont'   },
+  { id:'c8',  text:'usually /\noften / never',      answer:'simple' },
+  { id:'c9',  text:'at the\nmoment',                answer:'cont'   },
+  { id:'c10', text:'привычное\nдействие',           answer:'simple' },
+  { id:'c11', text:'действие\nпрямо сейчас',        answer:'cont'   },
+  { id:'c12', text:'расписание\n/ факт',            answer:'simple' },
+];
+
+let selectedId = null;
+let dragId = null;
+const isTouchDevice = () => window.matchMedia('(hover: none)').matches;
+
+function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
+
+function setSelected(id) {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+  selectedId = id;
+  document.getElementById('hint').textContent = id ? 'Теперь нажми на нужный столбец' : '';
+  if (id) document.getElementById('card-' + id)?.classList.add('selected');
+}
+
+function moveCardTo(col) {
+  if (!selectedId) return;
+  const card = document.getElementById('card-' + selectedId);
+  if (!card) return;
+  card.classList.remove('placed-simple','placed-cont','correct','wrong','selected');
+  card.classList.add(col === 'simple' ? 'placed-simple' : 'placed-cont');
+  card.dataset.placed = col;
+  document.getElementById('zone-' + col).appendChild(card);
+  document.getElementById('msg').textContent = '';
+  setSelected(null);
+}
+
+function moveCardToPool(id) {
+  const card = document.getElementById('card-' + id);
+  if (!card) return;
+  card.classList.remove('placed-simple','placed-cont','correct','wrong','selected');
+  delete card.dataset.placed;
+  document.getElementById('pool').appendChild(card);
+  document.getElementById('msg').textContent = '';
+  setSelected(null);
+}
+
+function createCard(item) {
+  const el = document.createElement('div');
+  el.className = 'card';
+  el.id = 'card-' + item.id;
+  el.textContent = item.text;
+  el.dataset.id = item.id;
+
+  el.addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (selectedId === item.id) { setSelected(null); return; }
+    if (selectedId) { setSelected(null); }
+    setSelected(item.id);
+  });
+
+  el.draggable = true;
+  el.addEventListener('dragstart', e => {
+    dragId = item.id;
+    setSelected(null);
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  el.addEventListener('dragend', () => { dragId = null; });
+
+  return el;
+}
+
+function setupColumnClick(colEl, colName) {
+  colEl.addEventListener('click', function(e) {
+    if (!selectedId) return;
+    moveCardTo(colName);
+  });
+}
+
+function setupDropZone(zone) {
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('over');
+    if (!dragId) return;
+    const card = document.getElementById('card-' + dragId);
+    if (!card) return;
+    card.classList.remove('placed-simple','placed-cont','correct','wrong');
+    card.classList.add(zone.dataset.col === 'simple' ? 'placed-simple' : 'placed-cont');
+    card.dataset.placed = zone.dataset.col;
+    zone.appendChild(card);
+    document.getElementById('msg').textContent = '';
+    dragId = null;
+  });
+}
+
+function checkAnswers() {
+  if (document.querySelectorAll('#pool .card').length > 0) {
+    document.getElementById('msg').textContent = 'Распредели все карточки!';
+    return;
+  }
+  let correct = 0;
+  setSelected(null);
+  items.forEach(item => {
+    const card = document.getElementById('card-' + item.id);
+    card.classList.remove('placed-simple','placed-cont','correct','wrong');
+    if (card.dataset.placed === item.answer) { card.classList.add('correct'); correct++; }
+    else card.classList.add('wrong');
+  });
+  document.getElementById('msg').textContent = correct === items.length
+    ? '🎉 Отлично! Всё верно!'
+    : `Правильно: ${correct} из ${items.length}. Красные — попробуй ещё раз.`;
+}
+
+function resetAll() {
+  ['pool','zone-simple','zone-cont'].forEach(id => document.getElementById(id).innerHTML = '');
+  document.getElementById('msg').textContent = '';
+  setSelected(null);
+  shuffle(items).forEach(item => {
+    const card = createCard(item);
+    document.getElementById('pool').appendChild(card);
+  });
+}
+
+setupColumnClick(document.getElementById('col-simple'), 'simple');
+setupColumnClick(document.getElementById('col-cont'), 'cont');
+setupDropZone(document.getElementById('zone-simple'));
+setupDropZone(document.getElementById('zone-cont'));
+
+const pool = document.getElementById('pool');
+pool.addEventListener('dragover', e => e.preventDefault());
+pool.addEventListener('drop', e => {
+  e.preventDefault();
+  if (!dragId) return;
+  moveCardToPool(dragId);
+  dragId = null;
+});
+pool.addEventListener('click', function(e) {
+  if (e.target === this && selectedId) moveCardToPool(selectedId);
+});
+
+resetAll();
+</script>
+</body>
+</html>
