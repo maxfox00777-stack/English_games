@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Present Simple vs Present Continuous</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #f5f5f0; color: #1a1a1a; padding: 2rem 1rem; }
+  h1 { text-align: center; font-size: 22px; font-weight: 500; margin-bottom: 6px; }
+  .subtitle { text-align: center; font-size: 14px; color: #666; margin-bottom: 1.5rem; }
+  .card-pool {
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+    margin-bottom: 1.5rem; padding: 1rem;
+    background: #eeeee8; border-radius: 12px;
+  }
+  .columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 1.5rem; max-width: 700px; margin-left: auto; margin-right: auto; }
+  .col { background: #fff; border: 1px solid #ddd; border-radius: 12px; padding: 1rem; min-height: 240px; }
+  .col-title { font-size: 15px; font-weight: 500; text-align: center; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+  .col.simple .col-title { color: #185FA5; }
+  .col.cont .col-title { color: #0F6E56; }
+  .drop-zone { min-height: 140px; display: flex; flex-direction: column; gap: 8px; padding: 4px; border-radius: 8px; transition: background 0.15s; }
+  .drop-zone.over { background: #f0f0ea; }
+  .card {
+    padding: 8px 14px; border-radius: 8px; border: 1px solid #ccc;
+    background: #fff; font-size: 14px; cursor: grab; user-select: none;
+    color: #1a1a1a; transition: opacity 0.15s, transform 0.1s;
+  }
+  .card:active { cursor: grabbing; opacity: 0.6; }
+  .card.placed-simple { background: #E6F1FB; border-color: #378ADD; color: #0C447C; }
+  .card.placed-cont { background: #E1F5EE; border-color: #1D9E75; color: #085041; }
+  .card.correct { background: #EAF3DE; border-color: #639922; color: #27500A; }
+  .card.wrong { background: #FCEBEB; border-color: #E24B4A; color: #791F1F; }
+  .btns { display: flex; gap: 10px; justify-content: center; margin-bottom: 1rem; }
+  button {
+    padding: 9px 24px; border-radius: 8px; border: 1px solid #ccc;
+    background: #fff; font-size: 14px; cursor: pointer; color: #1a1a1a;
+    transition: background 0.15s;
+  }
+  button:hover { background: #eeeee8; }
+  .result-msg { text-align: center; font-size: 15px; font-weight: 500; min-height: 24px; color: #1a1a1a; }
+  .pool-label { font-size: 13px; color: #666; text-align: center; margin-bottom: 8px; }
+  .wrapper { max-width: 700px; margin: 0 auto; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <h1>Present Simple vs Continuous</h1>
+  <p class="subtitle">Перетащи карточки в нужный столбец, затем нажми «Проверить»</p>
+
+  <div class="pool-label">Карточки</div>
+  <div class="card-pool" id="pool"></div>
+
+  <div class="columns">
+    <div class="col simple">
+      <div class="col-title">Present Simple</div>
+      <div class="drop-zone" id="zone-simple" data-col="simple"></div>
+    </div>
+    <div class="col cont">
+      <div class="col-title">Present Continuous</div>
+      <div class="drop-zone" id="zone-cont" data-col="cont"></div>
+    </div>
+  </div>
+
+  <div class="btns">
+    <button onclick="checkAnswers()">Проверить</button>
+    <button onclick="resetAll()">Сначала</button>
+  </div>
+  <div class="result-msg" id="msg"></div>
+</div>
+
+<script>
+const items = [
+  { id: 'c1',  text: 'глагол to be (am/is/are)',    answer: 'cont'   },
+  { id: 'c2',  text: 'окончание -ing',               answer: 'cont'   },
+  { id: 'c3',  text: 'вспомогательный do/does',      answer: 'simple' },
+  { id: 'c4',  text: 'слово now / right now',        answer: 'cont'   },
+  { id: 'c5',  text: 'слово every day / always',     answer: 'simple' },
+  { id: 'c6',  text: 'окончание -s/-es у he/she/it', answer: 'simple' },
+  { id: 'c7',  text: 'слова look! / listen!',        answer: 'cont'   },
+  { id: 'c8',  text: 'слово usually / often / never',answer: 'simple' },
+  { id: 'c9',  text: 'слово at the moment',          answer: 'cont'   },
+  { id: 'c10', text: 'привычное действие',            answer: 'simple' },
+  { id: 'c11', text: 'действие прямо сейчас',        answer: 'cont'   },
+  { id: 'c12', text: 'расписание / факт',            answer: 'simple' },
+];
+
+let dragId = null;
+
+function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
+
+function createCard(item) {
+  const el = document.createElement('div');
+  el.className = 'card';
+  el.id = 'card-' + item.id;
+  el.textContent = item.text;
+  el.draggable = true;
+  el.dataset.id = item.id;
+  el.addEventListener('dragstart', e => { dragId = item.id; e.dataTransfer.effectAllowed = 'move'; });
+  el.addEventListener('dragend', () => { dragId = null; });
+  return el;
+}
+
+function setupZone(zone) {
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('over');
+    if (!dragId) return;
+    const card = document.getElementById('card-' + dragId);
+    if (card) {
+      card.classList.remove('placed-simple','placed-cont','correct','wrong');
+      card.classList.add(zone.dataset.col === 'simple' ? 'placed-simple' : 'placed-cont');
+      zone.appendChild(card);
+      card.dataset.placed = zone.dataset.col;
+    }
+    document.getElementById('msg').textContent = '';
+  });
+}
+
+function checkAnswers() {
+  if (document.querySelectorAll('#pool .card').length > 0) {
+    document.getElementById('msg').textContent = 'Распредели все карточки!';
+    return;
+  }
+  let correct = 0;
+  items.forEach(item => {
+    const card = document.getElementById('card-' + item.id);
+    card.classList.remove('placed-simple','placed-cont','correct','wrong');
+    if (card.dataset.placed === item.answer) { card.classList.add('correct'); correct++; }
+    else card.classList.add('wrong');
+  });
+  const msg = document.getElementById('msg');
+  msg.textContent = correct === items.length
+    ? '🎉 Отлично! Всё верно!'
+    : `Правильно: ${correct} из ${items.length}. Красные карточки — попробуй ещё раз.`;
+}
+
+function resetAll() {
+  ['pool','zone-simple','zone-cont'].forEach(id => document.getElementById(id).innerHTML = '');
+  document.getElementById('msg').textContent = '';
+  shuffle(items).forEach(item => {
+    const card = createCard(item);
+    delete card.dataset.placed;
+    document.getElementById('pool').appendChild(card);
+  });
+}
+
+setupZone(document.getElementById('zone-simple'));
+setupZone(document.getElementById('zone-cont'));
+
+const pool = document.getElementById('pool');
+pool.addEventListener('dragover', e => e.preventDefault());
+pool.addEventListener('drop', e => {
+  e.preventDefault();
+  if (!dragId) return;
+  const card = document.getElementById('card-' + dragId);
+  if (card) {
+    card.classList.remove('placed-simple','placed-cont','correct','wrong');
+    delete card.dataset.placed;
+    pool.appendChild(card);
+  }
+  document.getElementById('msg').textContent = '';
+});
+
+resetAll();
+</script>
+</body>
+</html>
