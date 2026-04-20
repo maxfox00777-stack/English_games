@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seasons & Verbs</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #f4f3ee; color: #1a1a1a; min-height: 100vh; }
+
+  .header { background: #fff; border-bottom: 1px solid #e5e4de; padding: 1rem; text-align: center; position: sticky; top: 0; z-index: 10; }
+  .header h1 { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+  .stages { display: flex; gap: 8px; justify-content: center; }
+  .stage-dot { width: 36px; height: 6px; border-radius: 99px; background: #e0dfd8; transition: background 0.3s; }
+  .stage-dot.active { background: #7C3AED; }
+  .stage-dot.done   { background: #3B6D11; }
+  .stage-label { font-size: 12px; color: #888; margin-top: 6px; }
+
+  .screen { display: none; padding: 1.2rem 1rem 2rem; max-width: 500px; margin: 0 auto; }
+  .screen.show { display: block; }
+
+  .stage-title { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+  .stage-sub   { font-size: 13px; color: #666; margin-bottom: 1.2rem; line-height: 1.5; }
+
+  /* MATCH */
+  .match-score { text-align: center; font-size: 13px; color: #666; margin-bottom: .5rem; }
+  .match-hint  { text-align: center; font-size: 12px; color: #7C3AED; min-height: 16px; margin-bottom: .8rem; font-weight: 500; }
+  .match-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
+  .match-card {
+    padding: 10px 8px; border-radius: 10px; border: 1.5px solid #ddd;
+    background: #fff; font-size: 13px; cursor: pointer; text-align: center;
+    transition: all 0.15s; line-height: 1.4; user-select: none;
+  }
+  .match-card:active { transform: scale(0.96); }
+  .match-card.sel     { border-color: #7C3AED; background: #F5F3FF; color: #4C1D95; box-shadow: 0 0 0 2px #7C3AED30; }
+  .match-card.matched { opacity: 0; pointer-events: none; transition: opacity 0.4s; }
+  .match-card.wrong   { border-color: #E24B4A; background: #FCEBEB; color: #791F1F; animation: shake .3s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+
+  /* VERBS */
+  .prog-wrap { background: #e0dfd8; border-radius: 99px; height: 5px; margin-bottom: 1.2rem; }
+  .prog-bar  { height: 5px; border-radius: 99px; background: #7C3AED; transition: width 0.35s; }
+  .q-progress { text-align: center; font-size: 13px; color: #888; margin-bottom: 1rem; }
+
+  .verb-card {
+    background: #fff; border: 1px solid #e5e4de; border-radius: 14px;
+    padding: 1.5rem 1rem; text-align: center; margin-bottom: 1.2rem;
+  }
+  .verb-form1 { font-size: 28px; font-weight: 600; margin-bottom: 4px; }
+  .verb-trans { font-size: 14px; color: #888; }
+
+  .arrow { text-align: center; font-size: 22px; color: #bbb; margin-bottom: 1rem; }
+
+  .type-input {
+    width: 100%; padding: 13px 14px; border-radius: 10px; border: 1.5px solid #ddd;
+    font-size: 18px; font-family: inherit; background: #fff; color: #1a1a1a;
+    margin-bottom: .8rem; text-align: center; outline: none; transition: border-color .15s;
+  }
+  .type-input:focus   { border-color: #7C3AED; }
+  .type-input.correct { border-color: #639922; background: #EAF3DE; color: #27500A; }
+  .type-input.wrong   { border-color: #E24B4A; background: #FCEBEB; color: #791F1F; }
+
+  .feedback-line { text-align: center; font-size: 14px; font-weight: 500; min-height: 20px; margin-bottom: .8rem; }
+  .feedback-line.ok  { color: #3B6D11; }
+  .feedback-line.err { color: #A32D2D; }
+
+  .next-btn {
+    display: block; width: 100%; padding: 13px; border-radius: 10px;
+    border: none; background: #7C3AED; color: #fff; font-size: 15px;
+    cursor: pointer; font-family: inherit; transition: background .15s;
+  }
+  .next-btn:active   { background: #6D28D9; }
+  .next-btn:disabled { background: #ccc; cursor: default; }
+
+  /* FINISH */
+  #screen-finish { text-align: center; padding: 3rem 1rem; }
+  .fin-emoji { font-size: 56px; margin-bottom: 12px; }
+  .fin-title { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+  .fin-sub   { font-size: 14px; color: #666; margin-bottom: 1.8rem; line-height: 1.7; }
+  .fin-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 1.8rem; }
+  .fin-stat  { background: #fff; border: 1px solid #e5e4de; border-radius: 10px; padding: 12px 6px; }
+  .fin-stat-n { font-size: 22px; font-weight: 600; }
+  .fin-stat-l { font-size: 11px; color: #999; margin-top: 2px; }
+  .fin-stat-n.g { color: #3B6D11; } .fin-stat-n.r { color: #A32D2D; } .fin-stat-n.p { color: #7C3AED; }
+  .restart-btn { padding: 13px 36px; border-radius: 10px; border: none; background: #7C3AED; color: #fff; font-size: 15px; cursor: pointer; font-family: inherit; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🌿 Seasons & Irregular Verbs</h1>
+  <div class="stages">
+    <div class="stage-dot active" id="dot-1"></div>
+    <div class="stage-dot" id="dot-2"></div>
+  </div>
+  <div class="stage-label" id="stage-label">Этап 1 из 2</div>
+</div>
+
+<!-- STAGE 1: MATCH -->
+<div class="screen show" id="screen-1">
+  <div class="stage-title">🔗 Соедини слово с переводом</div>
+  <div class="stage-sub">Нажми на английское слово, затем на перевод</div>
+  <div class="match-score">Найдено: <span id="m-found">0</span> / 13</div>
+  <div class="match-hint" id="m-hint"></div>
+  <div class="match-grid" id="match-grid"></div>
+</div>
+
+<!-- STAGE 2: TYPE VERB -->
+<div class="screen" id="screen-2">
+  <div class="stage-title">✍️ Напиши вторую форму глагола</div>
+  <div class="stage-sub">Посмотри на глагол и напиши его форму прошедшего времени</div>
+  <div class="prog-wrap"><div class="prog-bar" id="prog-2" style="width:0%"></div></div>
+  <div class="q-progress" id="q-prog2">Глагол 1 из 5</div>
+
+  <div class="verb-card">
+    <div class="verb-form1" id="v-word"></div>
+    <div class="verb-trans" id="v-trans"></div>
+  </div>
+
+  <div class="arrow">↓</div>
+
+  <input class="type-input" id="type-input" type="text" placeholder="Вторая форма..." autocomplete="off" autocorrect="off" spellcheck="false" />
+  <div class="feedback-line" id="fb2"></div>
+  <button class="next-btn" id="next2" onclick="handleNext2()" disabled>Проверить</button>
+</div>
+
+<!-- FINISH -->
+<div class="screen" id="screen-finish">
+  <div class="fin-emoji" id="fin-emoji"></div>
+  <div class="fin-title" id="fin-title"></div>
+  <div class="fin-sub" id="fin-sub"></div>
+  <div class="fin-stats">
+    <div class="fin-stat"><div class="fin-stat-n g" id="fs-correct">0</div><div class="fin-stat-l">верных</div></div>
+    <div class="fin-stat"><div class="fin-stat-n r" id="fs-wrong">0</div><div class="fin-stat-l">ошибок</div></div>
+    <div class="fin-stat"><div class="fin-stat-n p" id="fs-total">5</div><div class="fin-stat-l">заданий</div></div>
+  </div>
+  <button class="restart-btn" onclick="restartGame()">Начать заново</button>
+</div>
+
+<script>
+// ── DATA ──
+const matchWords = [
+  { en: 'warm',    ru: 'тёплый' },
+  { en: 'free',    ru: 'бесплатный / свободный' },
+  { en: 'hand',    ru: 'рука' },
+  { en: 'winter',  ru: 'зима' },
+  { en: 'spring',  ru: 'весна' },
+  { en: 'summer',  ru: 'лето' },
+  { en: 'autumn',  ru: 'осень' },
+  { en: 'parents', ru: 'родители' },
+  { en: 'special', ru: 'особенный' },
+  { en: 'swim',    ru: 'плавать' },
+  { en: 'sleep',   ru: 'спать' },
+  { en: 'win',     ru: 'побеждать' },
+  { en: 'run',     ru: 'бегать' },
+];
+
+const verbs = [
+  { word: 'swim',  trans: 'плавать',   answer: 'swam'  },
+  { word: 'sleep', trans: 'спать',     answer: 'slept' },
+  { word: 'take',  trans: 'брать',     answer: 'took'  },
+  { word: 'win',   trans: 'побеждать', answer: 'won'   },
+  { word: 'run',   trans: 'бегать',    answer: 'ran'   },
+];
+
+const matchColors = [
+  '#E6F1FB:#185FA5','#E1F5EE:#0F6E56','#FAEEDA:#854F0B','#F5F3FF:#4C1D95',
+  '#EAF3DE:#3B6D11','#FAECE7:#993C1D','#FEF3C7:#92400E','#FCE7F3:#9D174D',
+  '#ECFDF5:#065F46','#EFF6FF:#1D4ED8','#FFF7ED:#C2410C','#F0FDF4:#166534','#FDF4FF:#7E22CE'
+];
+
+let totalCorrect = 0, totalWrong = 0;
+
+function shuffle(arr) { return [...arr].sort(() => Math.random() - .5); }
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('show'));
+  document.getElementById('screen-' + id).classList.add('show');
+  const labels = { 1: 'Этап 1 из 2 — Сопоставь', 2: 'Этап 2 из 2 — Напиши форму', finish: 'Готово!' };
+  document.getElementById('stage-label').textContent = labels[id] || '';
+  ['dot-1','dot-2'].forEach((d, i) => {
+    const el = document.getElementById(d);
+    el.className = 'stage-dot';
+    if (id === 'finish') { el.classList.add('done'); return; }
+    const n = parseInt(id);
+    if (i + 1 < n) el.classList.add('done');
+    else if (i + 1 === n) el.classList.add('active');
+  });
+}
+
+// ══ STAGE 1 ══
+let mSelEn = null, mSelRu = null, mMatched = 0;
+
+function initMatch() {
+  mSelEn = null; mSelRu = null; mMatched = 0;
+  document.getElementById('m-found').textContent = 0;
+  document.getElementById('m-hint').textContent = '';
+  const grid = document.getElementById('match-grid');
+  grid.innerHTML = '';
+  const enList = shuffle(matchWords.map(w => w.en));
+  const ruList = shuffle(matchWords.map(w => w.ru));
+  for (let i = 0; i < matchWords.length; i++) {
+    grid.appendChild(makeCard('en', enList[i]));
+    grid.appendChild(makeCard('ru', ruList[i]));
+  }
+}
+
+function makeCard(type, word) {
+  const el = document.createElement('div');
+  el.className = 'match-card ' + type + '-card';
+  el.id = (type === 'en' ? 'men-' : 'mru-') + word.replace(/[^a-zа-яё]/gi, '_');
+  el.textContent = word;
+  el.onclick = () => tapCard(type, word, el);
+  return el;
+}
+
+function tapCard(type, word, el) {
+  if (el.classList.contains('matched')) return;
+  document.querySelectorAll('.' + type + '-card').forEach(c => c.classList.remove('sel'));
+  if (type === 'en') { if (mSelEn === word) { mSelEn = null; setHint(''); return; } mSelEn = word; }
+  else               { if (mSelRu === word) { mSelRu = null; setHint(''); return; } mSelRu = word; }
+  el.classList.add('sel');
+  if (type === 'en' && !mSelRu) setHint('Теперь выбери перевод');
+  if (type === 'ru' && !mSelEn) setHint('Теперь выбери английское слово');
+  if (mSelEn && mSelRu) checkPair();
+}
+
+function setHint(t) { document.getElementById('m-hint').textContent = t; }
+
+function checkPair() {
+  const pair = matchWords.find(w => w.en === mSelEn);
+  const ok = pair && pair.ru === mSelRu;
+  const enEl = document.getElementById('men-' + mSelEn.replace(/[^a-zа-яё]/gi, '_'));
+  const ruEl = document.getElementById('mru-' + mSelRu.replace(/[^a-zа-яё]/gi, '_'));
+  if (ok) {
+    mMatched++;
+    document.getElementById('m-found').textContent = mMatched;
+    const col = matchColors[(mMatched - 1) % matchColors.length].split(':');
+    [enEl, ruEl].forEach(el => {
+      el.style.background = col[0]; el.style.borderColor = col[1]; el.style.color = col[1];
+      el.classList.remove('sel'); el.classList.add('matched');
+    });
+    setHint('');
+    if (mMatched === matchWords.length) setTimeout(() => { showScreen(2); initVerbs(); }, 600);
+  } else {
+    [enEl, ruEl].forEach(el => { el.classList.remove('sel'); el.classList.add('wrong'); setTimeout(() => el.classList.remove('wrong'), 400); });
+    setHint('Не совпадает — попробуй ещё!');
+  }
+  mSelEn = null; mSelRu = null;
+}
+
+// ══ STAGE 2 ══
+let vQueue = [], vIdx = 0, vCurrent = null, vChecked = false, vCorrect = 0, vWrong = 0;
+
+function initVerbs() {
+  vQueue = shuffle([...verbs]);
+  vIdx = 0; vCorrect = 0; vWrong = 0;
+  loadVerb();
+}
+
+function loadVerb() {
+  vCurrent = vQueue[vIdx];
+  vChecked = false;
+  document.getElementById('v-word').textContent = vCurrent.word;
+  document.getElementById('v-trans').textContent = vCurrent.trans;
+  document.getElementById('q-prog2').textContent = `Глагол ${vIdx + 1} из ${vQueue.length}`;
+  document.getElementById('prog-2').style.width = (vIdx / vQueue.length * 100) + '%';
+  document.getElementById('fb2').textContent = '';
+  document.getElementById('fb2').className = 'feedback-line';
+  document.getElementById('next2').textContent = 'Проверить';
+  document.getElementById('next2').disabled = true;
+  const inp = document.getElementById('type-input');
+  inp.value = ''; inp.className = 'type-input'; inp.disabled = false;
+  setTimeout(() => inp.focus(), 100);
+}
+
+document.getElementById('type-input').addEventListener('input', function() {
+  if (!vChecked) document.getElementById('next2').disabled = this.value.trim().length === 0;
+});
+document.getElementById('type-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') handleNext2();
+});
+
+function handleNext2() {
+  if (!vChecked) checkVerb();
+  else nextVerb();
+}
+
+function checkVerb() {
+  const inp = document.getElementById('type-input');
+  const answer = inp.value.trim().toLowerCase();
+  const correct = vCurrent.answer.toLowerCase();
+  vChecked = true;
+  inp.disabled = true;
+  const fb = document.getElementById('fb2');
+  const next = document.getElementById('next2');
+  if (answer === correct) {
+    inp.classList.add('correct');
+    fb.textContent = '✓ Верно!'; fb.className = 'feedback-line ok';
+    vCorrect++; totalCorrect++;
+  } else {
+    inp.classList.add('wrong');
+    fb.textContent = `✗ Правильно: ${vCurrent.answer}`; fb.className = 'feedback-line err';
+    vWrong++; totalWrong++;
+  }
+  next.textContent = vIdx + 1 >= vQueue.length ? 'Завершить 🎉' : 'Следующий →';
+  next.disabled = false;
+}
+
+function nextVerb() {
+  vIdx++;
+  if (vIdx >= vQueue.length) showFinish();
+  else loadVerb();
+}
+
+function showFinish() {
+  const total = verbs.length;
+  const pct = Math.round(totalCorrect / total * 100);
+  const emoji = pct === 100 ? '🏆' : pct >= 80 ? '🎉' : pct >= 50 ? '💪' : '📚';
+  const title = pct === 100 ? 'Идеально!' : pct >= 80 ? 'Отлично!' : pct >= 50 ? 'Хорошая работа!' : 'Продолжай тренироваться!';
+  document.getElementById('fin-emoji').textContent = emoji;
+  document.getElementById('fin-title').textContent = title;
+  document.getElementById('fin-sub').innerHTML = `Правильных ответов во 2 этапе: <strong>${totalCorrect} из ${total}</strong> (${pct}%)`;
+  document.getElementById('fs-correct').textContent = totalCorrect;
+  document.getElementById('fs-wrong').textContent = totalWrong;
+  document.getElementById('fs-total').textContent = total;
+  showScreen('finish');
+}
+
+function restartGame() {
+  totalCorrect = 0; totalWrong = 0;
+  showScreen(1); initMatch();
+}
+
+initMatch();
+</script>
+</body>
+</html>
