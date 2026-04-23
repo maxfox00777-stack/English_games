@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Environment & Conservation</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #f4f3ee; color: #1a1a1a; min-height: 100vh; }
+
+  .header { background: #fff; border-bottom: 1px solid #e5e4de; padding: 1rem; text-align: center; position: sticky; top: 0; z-index: 10; }
+  .header h1 { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+  .stages { display: flex; gap: 6px; justify-content: center; }
+  .stage-dot { width: 30px; height: 6px; border-radius: 99px; background: #e0dfd8; transition: background 0.3s; }
+  .stage-dot.active { background: #7C3AED; }
+  .stage-dot.done   { background: #3B6D11; }
+  .stage-label { font-size: 12px; color: #888; margin-top: 6px; }
+
+  .screen { display: none; padding: 1.2rem 1rem 2rem; max-width: 520px; margin: 0 auto; }
+  .screen.show { display: block; }
+  .stage-title { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+  .stage-sub   { font-size: 13px; color: #666; margin-bottom: 1.2rem; line-height: 1.5; }
+
+  /* MATCH */
+  .match-score { text-align: center; font-size: 13px; color: #666; margin-bottom: .4rem; }
+  .match-hint  { text-align: center; font-size: 12px; color: #7C3AED; min-height: 16px; margin-bottom: .8rem; font-weight: 500; }
+  .match-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .match-card {
+    padding: 10px 8px; border-radius: 10px; border: 1.5px solid #ddd;
+    background: #fff; font-size: 12.5px; cursor: pointer; text-align: center;
+    transition: all 0.15s; line-height: 1.4; user-select: none;
+  }
+  .match-card:active { transform: scale(0.96); }
+  .match-card.sel     { border-color: #7C3AED; background: #F5F3FF; color: #4C1D95; box-shadow: 0 0 0 2px #7C3AED30; }
+  .match-card.matched { opacity: 0; pointer-events: none; transition: opacity 0.4s; }
+  .match-card.wrong   { border-color: #E24B4A; background: #FCEBEB; color: #791F1F; animation: shake .3s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+
+  /* SHARED LISTEN */
+  .prog-wrap { background: #e0dfd8; border-radius: 99px; height: 5px; margin-bottom: 1.2rem; }
+  .prog-bar  { height: 5px; border-radius: 99px; background: #7C3AED; transition: width 0.35s; }
+  .q-prog    { text-align: center; font-size: 13px; color: #888; margin-bottom: 1rem; }
+
+  .listen-row { display: flex; gap: 10px; justify-content: center; align-items: center; margin: .5rem 0 1.2rem; }
+  .listen-btn {
+    width: 72px; height: 72px; border-radius: 50%; border: none;
+    background: #7C3AED; color: #fff; font-size: 28px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 16px #7C3AED40; transition: transform .15s, background .15s; flex-shrink: 0;
+  }
+  .listen-btn:active { transform: scale(.93); background: #6D28D9; }
+  .listen-btn.speaking { background: #5B21B6; animation: pulse .8s infinite alternate; }
+  .slow-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 8px 12px; border-radius: 10px; border: 1.5px solid #ddd;
+    background: #fff; font-size: 11px; color: #888; cursor: pointer;
+    font-family: inherit; transition: all .15s; line-height: 1.3;
+  }
+  .slow-btn:active { background: #eeeee8; }
+  .slow-btn.speaking { border-color: #7C3AED; color: #7C3AED; background: #F5F3FF; }
+  .slow-btn .slow-icon { font-size: 18px; }
+  @keyframes pulse { from{box-shadow:0 4px 16px #7C3AED40} to{box-shadow:0 4px 28px #7C3AED90} }
+  .listen-sub { font-size: 12px; color: #999; text-align: center; margin-bottom: .8rem; }
+
+  .hint-toggle {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-bottom: 1rem; padding: 6px 14px; border-radius: 99px;
+    border: 1px dashed #bbb; background: transparent;
+    font-size: 12px; color: #999; cursor: pointer; font-family: inherit;
+    transition: all .15s; width: 100%; justify-content: center;
+  }
+  .hint-toggle:active { background: #f0f0ea; }
+  .hint-toggle .arr { transition: transform .2s; display: inline-block; }
+  .hint-toggle.open .arr { transform: rotate(90deg); }
+  .ru-hint-box {
+    background: #fff; border: 1px solid #e5e4de; border-radius: 12px;
+    padding: .9rem 1rem; text-align: center; font-size: 14px; color: #555;
+    margin-bottom: 1rem; line-height: 1.6; display: none;
+  }
+  .ru-hint-box.show { display: block; }
+
+  .type-input {
+    width: 100%; padding: 12px 14px; border-radius: 10px; border: 1.5px solid #ddd;
+    font-size: 15px; font-family: inherit; background: #fff; color: #1a1a1a;
+    margin-bottom: .8rem; outline: none; transition: border-color .15s; resize: none;
+  }
+  .type-input:focus   { border-color: #7C3AED; }
+  .type-input.correct { border-color: #639922; background: #EAF3DE; color: #27500A; }
+  .type-input.wrong   { border-color: #E24B4A; background: #FCEBEB; }
+
+  .correct-ans { font-size: 13px; color: #3B6D11; background: #EAF3DE; border-radius: 8px; padding: 8px 12px; margin-bottom: .8rem; display: none; line-height: 1.5; }
+  .feedback-line { text-align: center; font-size: 14px; font-weight: 500; min-height: 20px; margin-bottom: .8rem; }
+  .feedback-line.ok  { color: #3B6D11; }
+  .feedback-line.err { color: #A32D2D; }
+
+  .next-btn {
+    display: block; width: 100%; padding: 13px; border-radius: 10px;
+    border: none; background: #7C3AED; color: #fff; font-size: 15px;
+    cursor: pointer; font-family: inherit; transition: background .15s;
+  }
+  .next-btn:active   { background: #6D28D9; }
+  .next-btn:disabled { background: #ccc; cursor: default; }
+
+  /* FINISH */
+  #screen-finish { text-align: center; padding: 3rem 1rem; }
+  .fin-emoji { font-size: 56px; margin-bottom: 12px; }
+  .fin-title { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+  .fin-sub   { font-size: 14px; color: #666; margin-bottom: 1.8rem; line-height: 1.7; }
+  .fin-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 1.8rem; }
+  .fin-stat  { background: #fff; border: 1px solid #e5e4de; border-radius: 10px; padding: 12px 6px; }
+  .fin-stat-n { font-size: 22px; font-weight: 600; }
+  .fin-stat-l { font-size: 11px; color: #999; margin-top: 2px; }
+  .fin-stat-n.g { color: #3B6D11; } .fin-stat-n.r { color: #A32D2D; } .fin-stat-n.p { color: #7C3AED; }
+  .restart-btn { padding: 13px 36px; border-radius: 10px; border: none; background: #7C3AED; color: #fff; font-size: 15px; cursor: pointer; font-family: inherit; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🌿 Environment & Conservation</h1>
+  <div class="stages">
+    <div class="stage-dot active" id="dot-1"></div>
+    <div class="stage-dot" id="dot-2"></div>
+    <div class="stage-dot" id="dot-3"></div>
+  </div>
+  <div class="stage-label" id="stage-label">Этап 1 из 3</div>
+</div>
+
+<!-- STAGE 1: MATCH -->
+<div class="screen show" id="screen-1">
+  <div class="stage-title">🔗 Соедини слово с переводом</div>
+  <div class="stage-sub">Нажми на английское слово, затем на его перевод</div>
+  <div class="match-score">Найдено: <span id="m-found">0</span> / 13</div>
+  <div class="match-hint" id="m-hint"></div>
+  <div class="match-grid" id="match-grid"></div>
+</div>
+
+<!-- STAGE 2: LISTEN WORDS -->
+<div class="screen" id="screen-2">
+  <div class="stage-title">🎧 Послушай и напиши слово</div>
+  <div class="stage-sub">Нажми 🔊 — послушай слово и напиши его. Нажми 🐢 — медленнее.</div>
+  <div class="prog-wrap"><div class="prog-bar" id="prog-2" style="width:0%"></div></div>
+  <div class="q-prog" id="q-prog2">Слово 1 из 6</div>
+
+  <div class="listen-row">
+    <button class="listen-btn" id="lb2" onclick="speak2(false)">🔊</button>
+    <button class="slow-btn" id="sb2" onclick="speak2(true)">
+      <span class="slow-icon">🐢</span>медленнее
+    </button>
+  </div>
+  <div class="listen-sub" id="ls2">Нажми, чтобы послушать</div>
+
+  <input class="type-input" id="type-input2" type="text" placeholder="Напиши слово здесь..." autocomplete="off" autocorrect="off" spellcheck="false" />
+  <div class="correct-ans" id="correct-ans2"></div>
+  <div class="feedback-line" id="fb2"></div>
+  <button class="next-btn" id="next2" onclick="handleNext2()" disabled>Проверить</button>
+</div>
+
+<!-- STAGE 3: LISTEN SENTENCES -->
+<div class="screen" id="screen-3">
+  <div class="stage-title">🎧 Послушай и напиши предложение</div>
+  <div class="stage-sub">Нажми 🔊 — послушай предложение и напиши его. Нажми 🐢 — медленнее.</div>
+  <div class="prog-wrap"><div class="prog-bar" id="prog-3" style="width:0%"></div></div>
+  <div class="q-prog" id="q-prog3">Предложение 1 из 5</div>
+
+  <div class="listen-row">
+    <button class="listen-btn" id="lb3" onclick="speak3(false)">🔊</button>
+    <button class="slow-btn" id="sb3" onclick="speak3(true)">
+      <span class="slow-icon">🐢</span>медленнее
+    </button>
+  </div>
+  <div class="listen-sub" id="ls3">Нажми, чтобы послушать</div>
+
+  <button class="hint-toggle" id="hint-toggle3" onclick="toggleHint()">
+    <span class="arr">▶</span> Показать перевод
+  </button>
+  <div class="ru-hint-box" id="ru-hint3"></div>
+
+  <textarea class="type-input" id="type-input3" rows="2" placeholder="Напиши предложение здесь..." autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+  <div class="correct-ans" id="correct-ans3"></div>
+  <div class="feedback-line" id="fb3"></div>
+  <button class="next-btn" id="next3" onclick="handleNext3()" disabled>Проверить</button>
+</div>
+
+<!-- FINISH -->
+<div class="screen" id="screen-finish">
+  <div class="fin-emoji" id="fin-emoji"></div>
+  <div class="fin-title" id="fin-title"></div>
+  <div class="fin-sub" id="fin-sub"></div>
+  <div class="fin-stats">
+    <div class="fin-stat"><div class="fin-stat-n g" id="fs-c">0</div><div class="fin-stat-l">верных</div></div>
+    <div class="fin-stat"><div class="fin-stat-n r" id="fs-w">0</div><div class="fin-stat-l">ошибок</div></div>
+    <div class="fin-stat"><div class="fin-stat-n p">11</div><div class="fin-stat-l">заданий</div></div>
+  </div>
+  <button class="restart-btn" onclick="restartGame()">Начать заново</button>
+</div>
+
+<script>
+// ── DATA ──
+const matchWords = [
+  { en: 'recycling',        ru: 'переработка' },
+  { en: 'natural habitat',  ru: 'природная среда обитания' },
+  { en: 'conservation',     ru: 'сохранение' },
+  { en: 'important',        ru: 'важный' },
+  { en: 'burn',             ru: 'сжигать' },
+  { en: 'cause',            ru: 'вызывать, быть причиной' },
+  { en: 'poison',           ru: 'отравлять' },
+  { en: 'acid rain',        ru: 'кислотный дождь' },
+  { en: 'make up',          ru: 'выдумать' },
+  { en: 'take care',        ru: 'заботиться' },
+  { en: 'government',       ru: 'правительство' },
+  { en: 'reduce pollution', ru: 'сокращать загрязнение' },
+  { en: 'have to',          ru: 'должен, обязан' },
+];
+
+const listenWords = [
+  { en: 'conservation',    ru: 'сохранение' },
+  { en: 'recycling',       ru: 'переработка' },
+  { en: 'cause',           ru: 'вызывать' },
+  { en: 'acid rain',       ru: 'кислотный дождь' },
+  { en: 'government',      ru: 'правительство' },
+  { en: 'reduce pollution',ru: 'сокращать загрязнение' },
+];
+
+const sentences = [
+  { en: 'He made up this story!',                                          ru: 'Он выдумал эту историю!' },
+  { en: 'Acid rain causes pollution and poisons trees.',                    ru: 'Кислотный дождь вызывает загрязнение и отравляет деревья.' },
+  { en: 'I have to take care of these animals.',                           ru: 'Я должен заботиться об этих животных.' },
+  { en: 'The government has been trying to reduce pollution for a long time.', ru: 'Правительство давно пытается сократить загрязнение.' },
+  { en: 'Trees and plants are important for natural habitats.',             ru: 'Деревья и растения важны для природной среды обитания.' },
+];
+
+const matchColors = [
+  '#E6F1FB:#185FA5','#E1F5EE:#0F6E56','#FAEEDA:#854F0B','#F5F3FF:#4C1D95',
+  '#EAF3DE:#3B6D11','#FAECE7:#993C1D','#FEF3C7:#92400E','#FCE7F3:#9D174D',
+  '#ECFDF5:#065F46','#EFF6FF:#1D4ED8','#FDF4FF:#7E22CE','#FFF1F2:#9F1239','#F0FDF4:#166534'
+];
+
+let totalCorrect = 0, totalWrong = 0;
+function shuffle(arr) { return [...arr].sort(() => Math.random() - .5); }
+
+// ── SPEECH ──
+const synth = window.speechSynthesis;
+let voices = [];
+speechSynthesis.onvoiceschanged = () => { voices = synth.getVoices(); };
+voices = synth.getVoices();
+
+function speakText(text, slow, mainBtnId, slowBtnId, subId) {
+  synth.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'en-US';
+  utt.rate = slow ? 0.55 : 0.82;
+  const v = voices.find(v => v.lang === 'en-US') || voices.find(v => v.lang.startsWith('en'));
+  if (v) utt.voice = v;
+  const mb = document.getElementById(mainBtnId);
+  const sb = document.getElementById(slowBtnId);
+  const sub = document.getElementById(subId);
+  if (mb) mb.classList.add('speaking');
+  if (sb && slow) sb.classList.add('speaking');
+  if (sub) sub.textContent = slow ? '🐢 Медленно...' : 'Слушай...';
+  utt.onend = () => {
+    if (mb) mb.classList.remove('speaking');
+    if (sb) sb.classList.remove('speaking');
+    if (sub) sub.textContent = 'Нажми 🔊 ещё раз или 🐢 для медленного повтора';
+  };
+  synth.speak(utt);
+}
+
+// ── SCREEN ──
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('show'));
+  document.getElementById('screen-' + id).classList.add('show');
+  const labels = {
+    1:'Этап 1 из 3 — Сопоставь',
+    2:'Этап 2 из 3 — Послушай слово',
+    3:'Этап 3 из 3 — Послушай предложение',
+    finish:'Готово!'
+  };
+  document.getElementById('stage-label').textContent = labels[id] || '';
+  ['dot-1','dot-2','dot-3'].forEach((d,i) => {
+    const el = document.getElementById(d);
+    el.className = 'stage-dot';
+    if (id === 'finish') { el.classList.add('done'); return; }
+    const n = parseInt(id);
+    if (i+1 < n) el.classList.add('done');
+    else if (i+1 === n) el.classList.add('active');
+  });
+}
+
+// ══ STAGE 1 ══
+let mSelEn=null, mSelRu=null, mMatched=0;
+
+function initMatch() {
+  mSelEn=null; mSelRu=null; mMatched=0;
+  document.getElementById('m-found').textContent=0;
+  document.getElementById('m-hint').textContent='';
+  const grid=document.getElementById('match-grid');
+  grid.innerHTML='';
+  const enList=shuffle(matchWords.map(w=>w.en));
+  const ruList=shuffle(matchWords.map(w=>w.ru));
+  for(let i=0;i<matchWords.length;i++){
+    grid.appendChild(makeCard('en',enList[i]));
+    grid.appendChild(makeCard('ru',ruList[i]));
+  }
+}
+
+function makeCard(type,word){
+  const el=document.createElement('div');
+  el.className='match-card '+type+'-card';
+  el.id=(type==='en'?'men-':'mru-')+word.replace(/[^a-zа-яё]/gi,'_');
+  el.textContent=word;
+  el.onclick=()=>tapCard(type,word,el);
+  return el;
+}
+
+function tapCard(type,word,el){
+  if(el.classList.contains('matched'))return;
+  document.querySelectorAll('.'+type+'-card').forEach(c=>c.classList.remove('sel'));
+  if(type==='en'){if(mSelEn===word){mSelEn=null;setHint('');return;}mSelEn=word;}
+  else{if(mSelRu===word){mSelRu=null;setHint('');return;}mSelRu=word;}
+  el.classList.add('sel');
+  if(type==='en'&&!mSelRu)setHint('Теперь выбери перевод');
+  if(type==='ru'&&!mSelEn)setHint('Теперь выбери английское слово');
+  if(mSelEn&&mSelRu)checkPair();
+}
+
+function setHint(t){document.getElementById('m-hint').textContent=t;}
+
+function checkPair(){
+  const pair=matchWords.find(w=>w.en===mSelEn);
+  const ok=pair&&pair.ru===mSelRu;
+  const enEl=document.getElementById('men-'+mSelEn.replace(/[^a-zа-яё]/gi,'_'));
+  const ruEl=document.getElementById('mru-'+mSelRu.replace(/[^a-zа-яё]/gi,'_'));
+  if(ok){
+    mMatched++;
+    document.getElementById('m-found').textContent=mMatched;
+    const col=matchColors[(mMatched-1)%matchColors.length].split(':');
+    [enEl,ruEl].forEach(el=>{
+      el.style.background=col[0];el.style.borderColor=col[1];el.style.color=col[1];
+      el.classList.remove('sel');el.classList.add('matched');
+    });
+    setHint('');
+    if(mMatched===matchWords.length)setTimeout(()=>{showScreen(2);initStage2();},600);
+  } else {
+    [enEl,ruEl].forEach(el=>{el.classList.remove('sel');el.classList.add('wrong');setTimeout(()=>el.classList.remove('wrong'),400);});
+    setHint('Не совпадает — попробуй ещё!');
+  }
+  mSelEn=null;mSelRu=null;
+}
+
+// ══ STAGE 2: LISTEN WORDS ══
+let s2Queue=[], s2Idx=0, s2Current=null, s2Checked=false;
+
+function initStage2(){
+  s2Queue=shuffle([...listenWords]);
+  s2Idx=0;s2Checked=false;loadWord();
+}
+
+function speak2(slow){ if(s2Current) speakText(s2Current.en,slow,'lb2','sb2','ls2'); }
+
+function loadWord(){
+  s2Current=s2Queue[s2Idx];
+  s2Checked=false;
+  document.getElementById('q-prog2').textContent=`Слово ${s2Idx+1} из ${s2Queue.length}`;
+  document.getElementById('prog-2').style.width=(s2Idx/s2Queue.length*100)+'%';
+  document.getElementById('fb2').textContent='';
+  document.getElementById('fb2').className='feedback-line';
+  document.getElementById('correct-ans2').style.display='none';
+  document.getElementById('next2').textContent='Проверить';
+  document.getElementById('next2').disabled=true;
+  document.getElementById('ls2').textContent='Нажми, чтобы послушать';
+  ['lb2','sb2'].forEach(id=>document.getElementById(id).classList.remove('speaking'));
+  const inp=document.getElementById('type-input2');
+  inp.value='';inp.className='type-input';inp.disabled=false;
+  setTimeout(()=>speak2(false),400);
+}
+
+document.getElementById('type-input2').addEventListener('input',function(){
+  if(!s2Checked)document.getElementById('next2').disabled=this.value.trim().length===0;
+});
+document.getElementById('type-input2').addEventListener('keydown',function(e){
+  if(e.key==='Enter')handleNext2();
+});
+
+function handleNext2(){if(!s2Checked)checkWord();else nextWord();}
+
+function normalize(str){return str.toLowerCase().replace(/[.,!?'"]/g,'').replace(/\s+/g,' ').trim();}
+
+function checkWord(){
+  const inp=document.getElementById('type-input2');
+  const answer=normalize(inp.value);
+  const correct=normalize(s2Current.en);
+  s2Checked=true;inp.disabled=true;
+  const fb=document.getElementById('fb2');
+  const ansBox=document.getElementById('correct-ans2');
+  const next=document.getElementById('next2');
+  if(answer===correct){
+    inp.classList.add('correct');
+    fb.textContent='✓ Верно!';fb.className='feedback-line ok';totalCorrect++;
+  } else {
+    inp.classList.add('wrong');
+    fb.textContent='✗ Правильно: '+s2Current.en;fb.className='feedback-line err';
+    ansBox.textContent='Перевод: '+s2Current.ru;ansBox.style.display='block';
+    totalWrong++;
+  }
+  next.textContent=s2Idx+1>=s2Queue.length?'Следующий этап →':'Следующее →';
+  next.disabled=false;
+}
+
+function nextWord(){
+  s2Idx++;
+  if(s2Idx>=s2Queue.length){showScreen(3);initStage3();}
+  else loadWord();
+}
+
+// ══ STAGE 3: LISTEN SENTENCES ══
+let s3Idx=0, s3Current=null, s3Checked=false;
+
+function initStage3(){s3Idx=0;s3Checked=false;loadSentence();}
+
+function speak3(slow){ if(s3Current) speakText(s3Current.en,slow,'lb3','sb3','ls3'); }
+
+function loadSentence(){
+  s3Current=sentences[s3Idx];
+  s3Checked=false;
+  document.getElementById('q-prog3').textContent=`Предложение ${s3Idx+1} из ${sentences.length}`;
+  document.getElementById('prog-3').style.width=(s3Idx/sentences.length*100)+'%';
+  document.getElementById('ru-hint3').textContent=s3Current.ru;
+  document.getElementById('ru-hint3').classList.remove('show');
+  const toggle=document.getElementById('hint-toggle3');
+  toggle.classList.remove('open');
+  toggle.innerHTML='<span class="arr">▶</span> Показать перевод';
+  document.getElementById('fb3').textContent='';
+  document.getElementById('fb3').className='feedback-line';
+  document.getElementById('correct-ans3').style.display='none';
+  document.getElementById('next3').textContent='Проверить';
+  document.getElementById('next3').disabled=true;
+  document.getElementById('ls3').textContent='Нажми, чтобы послушать';
+  ['lb3','sb3'].forEach(id=>document.getElementById(id).classList.remove('speaking'));
+  const inp=document.getElementById('type-input3');
+  inp.value='';inp.className='type-input';inp.disabled=false;
+  setTimeout(()=>speak3(false),400);
+}
+
+function toggleHint(){
+  const box=document.getElementById('ru-hint3');
+  const toggle=document.getElementById('hint-toggle3');
+  const isOpen=box.classList.contains('show');
+  box.classList.toggle('show');
+  toggle.classList.toggle('open');
+  toggle.innerHTML=isOpen?'<span class="arr">▶</span> Показать перевод':'<span class="arr">▶</span> Скрыть перевод';
+}
+
+document.getElementById('type-input3').addEventListener('input',function(){
+  if(!s3Checked)document.getElementById('next3').disabled=this.value.trim().length===0;
+});
+document.getElementById('type-input3').addEventListener('keydown',function(e){
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();handleNext3();}
+});
+
+function handleNext3(){if(!s3Checked)checkSentence();else nextSentence();}
+
+function checkSentence(){
+  const inp=document.getElementById('type-input3');
+  const answer=normalize(inp.value);
+  const correct=normalize(s3Current.en);
+  s3Checked=true;inp.disabled=true;
+  const fb=document.getElementById('fb3');
+  const ansBox=document.getElementById('correct-ans3');
+  const next=document.getElementById('next3');
+  if(answer===correct){
+    inp.classList.add('correct');
+    fb.textContent='✓ Верно!';fb.className='feedback-line ok';totalCorrect++;
+  } else {
+    inp.classList.add('wrong');
+    fb.textContent='✗ Не совсем точно';fb.className='feedback-line err';
+    ansBox.textContent='Правильно: '+s3Current.en;ansBox.style.display='block';
+    totalWrong++;
+  }
+  next.textContent=s3Idx+1>=sentences.length?'Завершить 🎉':'Следующее →';
+  next.disabled=false;
+}
+
+function nextSentence(){
+  s3Idx++;
+  if(s3Idx>=sentences.length)showFinish();
+  else loadSentence();
+}
+
+function showFinish(){
+  const total=11;
+  const pct=Math.round(totalCorrect/total*100);
+  const emoji=pct===100?'🏆':pct>=80?'🎉':pct>=50?'💪':'📚';
+  const title=pct===100?'Идеально!':pct>=80?'Отлично!':pct>=50?'Хорошая работа!':'Продолжай тренироваться!';
+  document.getElementById('fin-emoji').textContent=emoji;
+  document.getElementById('fin-title').textContent=title;
+  document.getElementById('fin-sub').innerHTML=`Правильных ответов: <strong>${totalCorrect} из ${total}</strong> (${pct}%)`;
+  document.getElementById('fs-c').textContent=totalCorrect;
+  document.getElementById('fs-w').textContent=totalWrong;
+  showScreen('finish');
+}
+
+function restartGame(){totalCorrect=0;totalWrong=0;showScreen(1);initMatch();}
+
+initMatch();
+</script>
+</body>
+</html>
