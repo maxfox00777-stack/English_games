@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>City & Places</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #f4f3ee; color: #1a1a1a; min-height: 100vh; }
+
+  .header { background: #fff; border-bottom: 1px solid #e5e4de; padding: 1rem; text-align: center; position: sticky; top: 0; z-index: 10; }
+  .header h1 { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+  .stages { display: flex; gap: 6px; justify-content: center; }
+  .stage-dot { width: 30px; height: 6px; border-radius: 99px; background: #e0dfd8; transition: background 0.3s; }
+  .stage-dot.active { background: #7C3AED; }
+  .stage-dot.done   { background: #3B6D11; }
+  .stage-label { font-size: 12px; color: #888; margin-top: 6px; }
+
+  /* EDITOR BTN */
+  .editor-btn {
+    position: fixed; bottom: 16px; right: 16px; z-index: 100;
+    width: 40px; height: 40px; border-radius: 50%; border: none;
+    background: #e0dfd8; color: #888; font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .2s;
+  }
+  .editor-btn:active { background: #ccc; }
+  .editor-panel {
+    position: fixed; bottom: 64px; right: 16px; z-index: 100;
+    background: #fff; border: 1px solid #e5e4de; border-radius: 12px;
+    padding: .8rem; display: none; flex-direction: column; gap: 6px;
+    box-shadow: 0 4px 16px #0001;
+  }
+  .editor-panel.show { display: flex; }
+  .editor-panel button {
+    padding: 7px 14px; border-radius: 8px; border: 1px solid #ddd;
+    background: #f9f8f4; font-size: 13px; cursor: pointer; font-family: inherit; color: #555;
+    text-align: left;
+  }
+  .editor-panel button:active { background: #eeeee8; }
+
+  .screen { display: none; padding: 1.2rem 1rem 2rem; max-width: 520px; margin: 0 auto; }
+  .screen.show { display: block; }
+  .stage-title { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+  .stage-sub   { font-size: 13px; color: #666; margin-bottom: 1.2rem; line-height: 1.5; }
+
+  /* MATCH */
+  .match-score { text-align: center; font-size: 13px; color: #666; margin-bottom: .4rem; }
+  .match-hint  { text-align: center; font-size: 12px; color: #7C3AED; min-height: 16px; margin-bottom: .8rem; font-weight: 500; }
+  .match-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .match-card {
+    padding: 10px 8px; border-radius: 10px; border: 1.5px solid #ddd;
+    background: #fff; font-size: 13px; cursor: pointer; text-align: center;
+    transition: all 0.15s; line-height: 1.4; user-select: none;
+  }
+  .match-card:active { transform: scale(0.96); }
+  .match-card.sel     { border-color: #7C3AED; background: #F5F3FF; color: #4C1D95; box-shadow: 0 0 0 2px #7C3AED30; }
+  .match-card.matched { opacity: 0; pointer-events: none; transition: opacity 0.4s; }
+  .match-card.wrong   { border-color: #E24B4A; background: #FCEBEB; color: #791F1F; animation: shake .3s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+
+  /* FLASHCARDS */
+  .fc-progress-wrap { background: #e0dfd8; border-radius: 99px; height: 5px; margin-bottom: 1rem; }
+  .fc-progress { height: 5px; border-radius: 99px; background: #7C3AED; transition: width 0.35s; }
+  .fc-counter { text-align: center; font-size: 13px; color: #888; margin-bottom: .8rem; }
+  .fc-seen-row { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-bottom: 1rem; }
+  .fc-dot { width: 10px; height: 10px; border-radius: 50%; background: #e0dfd8; transition: background .3s; }
+  .fc-dot.seen { background: #7C3AED; }
+
+  .card-scene { width: 100%; height: 190px; perspective: 800px; cursor: pointer; margin-bottom: 1rem; }
+  .card-3d { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.45s; }
+  .card-3d.flipped { transform: rotateY(180deg); }
+  .card-face {
+    position: absolute; width: 100%; height: 100%;
+    border-radius: 16px; border: 1px solid #e5e4de;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 1.2rem; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  }
+  .card-front { background: #fff; }
+  .card-back  { background: #F5F3FF; transform: rotateY(180deg); }
+  .fc-en  { font-size: 24px; font-weight: 600; text-align: center; line-height: 1.3; }
+  .fc-ru  { font-size: 18px; color: #4C1D95; text-align: center; font-weight: 500; }
+  .fc-tap { font-size: 12px; color: #bbb; margin-top: 10px; }
+
+  .fc-nav { display: flex; gap: 10px; margin-bottom: 1rem; }
+  .fc-nav button {
+    flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #ddd;
+    background: #fff; font-size: 14px; cursor: pointer; font-family: inherit; color: #1a1a1a;
+  }
+  .fc-nav button:active { background: #eeeee8; }
+  .fc-nav button:disabled { opacity: .35; cursor: default; }
+
+  .start-test-btn {
+    display: block; width: 100%; padding: 14px; border-radius: 10px;
+    border: none; background: #7C3AED; color: #fff; font-size: 15px;
+    cursor: pointer; font-family: inherit;
+  }
+  .start-test-btn:active { background: #6D28D9; }
+  .start-test-btn:disabled { background: #ccc; cursor: default; }
+
+  /* LISTEN */
+  .prog-wrap { background: #e0dfd8; border-radius: 99px; height: 5px; margin-bottom: 1.2rem; }
+  .prog-bar  { height: 5px; border-radius: 99px; background: #7C3AED; transition: width 0.35s; }
+  .q-prog    { text-align: center; font-size: 13px; color: #888; margin-bottom: 1rem; }
+
+  .listen-row { display: flex; gap: 10px; justify-content: center; align-items: center; margin: .5rem 0 1rem; }
+  .listen-btn {
+    width: 72px; height: 72px; border-radius: 50%; border: none;
+    background: #7C3AED; color: #fff; font-size: 28px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 16px #7C3AED40; transition: transform .15s, background .15s; flex-shrink: 0;
+  }
+  .listen-btn:active { transform: scale(.93); background: #6D28D9; }
+  .listen-btn.speaking { background: #5B21B6; animation: pulse .8s infinite alternate; }
+  .slow-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 8px 12px; border-radius: 10px; border: 1.5px solid #ddd;
+    background: #fff; font-size: 11px; color: #888; cursor: pointer;
+    font-family: inherit; transition: all .15s; line-height: 1.3;
+  }
+  .slow-btn:active { background: #eeeee8; }
+  .slow-btn.speaking { border-color: #7C3AED; color: #7C3AED; background: #F5F3FF; }
+  .slow-icon { font-size: 18px; }
+  @keyframes pulse { from{box-shadow:0 4px 16px #7C3AED40} to{box-shadow:0 4px 28px #7C3AED90} }
+  .listen-sub { font-size: 12px; color: #999; text-align: center; margin-bottom: .8rem; }
+
+  .hint-toggle {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-bottom: 1rem; padding: 6px 14px; border-radius: 99px;
+    border: 1px dashed #bbb; background: transparent;
+    font-size: 12px; color: #999; cursor: pointer; font-family: inherit;
+    transition: all .15s; width: 100%; justify-content: center;
+  }
+  .hint-toggle:active { background: #f0f0ea; }
+  .hint-toggle .arr { transition: transform .2s; display: inline-block; }
+  .hint-toggle.open .arr { transform: rotate(90deg); }
+  .ru-hint-box {
+    background: #fff; border: 1px solid #e5e4de; border-radius: 12px;
+    padding: .9rem 1rem; text-align: center; font-size: 14px; color: #555;
+    margin-bottom: 1rem; line-height: 1.6; display: none;
+  }
+  .ru-hint-box.show { display: block; }
+
+  .type-input {
+    width: 100%; padding: 12px 14px; border-radius: 10px; border: 1.5px solid #ddd;
+    font-size: 15px; font-family: inherit; background: #fff; color: #1a1a1a;
+    margin-bottom: .8rem; outline: none; transition: border-color .15s; resize: none;
+  }
+  .type-input:focus   { border-color: #7C3AED; }
+  .type-input.correct { border-color: #639922; background: #EAF3DE; color: #27500A; }
+  .type-input.wrong   { border-color: #E24B4A; background: #FCEBEB; }
+
+  .correct-ans { font-size: 13px; color: #3B6D11; background: #EAF3DE; border-radius: 8px; padding: 8px 12px; margin-bottom: .8rem; display: none; line-height: 1.5; }
+  .feedback-line { text-align: center; font-size: 14px; font-weight: 500; min-height: 20px; margin-bottom: .8rem; }
+  .feedback-line.ok  { color: #3B6D11; }
+  .feedback-line.err { color: #A32D2D; }
+
+  .next-btn {
+    display: block; width: 100%; padding: 13px; border-radius: 10px;
+    border: none; background: #7C3AED; color: #fff; font-size: 15px;
+    cursor: pointer; font-family: inherit; transition: background .15s;
+  }
+  .next-btn:active   { background: #6D28D9; }
+  .next-btn:disabled { background: #ccc; cursor: default; }
+
+  /* FINISH & HISTORY */
+  #screen-finish { padding: 2rem 1rem; max-width: 520px; margin: 0 auto; }
+  .fin-top { text-align: center; margin-bottom: 1.5rem; }
+  .fin-emoji { font-size: 52px; margin-bottom: 10px; }
+  .fin-title { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+  .fin-sub   { font-size: 14px; color: #666; line-height: 1.6; }
+  .fin-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 1.5rem; }
+  .fin-stat  { background: #fff; border: 1px solid #e5e4de; border-radius: 10px; padding: 12px 6px; text-align: center; }
+  .fin-stat-n { font-size: 22px; font-weight: 600; }
+  .fin-stat-l { font-size: 11px; color: #999; margin-top: 2px; }
+  .fin-stat-n.g { color: #3B6D11; } .fin-stat-n.r { color: #A32D2D; } .fin-stat-n.p { color: #7C3AED; }
+
+  .history-title { font-size: 14px; font-weight: 600; margin-bottom: .6rem; color: #555; }
+  .history-list  { display: flex; flex-direction: column; gap: 6px; margin-bottom: 1.5rem; }
+  .history-item  {
+    display: flex; justify-content: space-between; align-items: center;
+    background: #fff; border: 1px solid #e5e4de; border-radius: 10px; padding: 10px 14px;
+    font-size: 13px;
+  }
+  .history-item .h-attempt { color: #888; }
+  .history-item .h-errors  { font-weight: 600; }
+  .history-item .h-errors.zero { color: #3B6D11; }
+  .history-item .h-errors.some { color: #A32D2D; }
+  .history-item .h-date { font-size: 11px; color: #bbb; }
+  .history-empty { text-align: center; font-size: 13px; color: #bbb; padding: 1rem; }
+
+  .restart-btn { display: block; width: 100%; padding: 13px; border-radius: 10px; border: none; background: #7C3AED; color: #fff; font-size: 15px; cursor: pointer; font-family: inherit; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🏙️ City & Places</h1>
+  <div class="stages">
+    <div class="stage-dot active" id="dot-1"></div>
+    <div class="stage-dot" id="dot-2"></div>
+    <div class="stage-dot" id="dot-3"></div>
+  </div>
+  <div class="stage-label" id="stage-label">Этап 1 из 3</div>
+</div>
+
+<!-- EDITOR BUTTON -->
+<button class="editor-btn" onclick="toggleEditor()" title="Режим редактора">⚙️</button>
+<div class="editor-panel" id="editor-panel">
+  <button onclick="goToStage(1)">→ Этап 1: Сопоставь</button>
+  <button onclick="goToStage(2)">→ Этап 2: Карточки</button>
+  <button onclick="goToStage(3)">→ Этап 3: Предложения</button>
+</div>
+
+<!-- STAGE 1: MATCH -->
+<div class="screen show" id="screen-1">
+  <div class="stage-title">🔗 Соедини слово с переводом</div>
+  <div class="stage-sub">Нажми на английское слово, затем на его перевод</div>
+  <div class="match-score">Найдено: <span id="m-found">0</span> / 10</div>
+  <div class="match-hint" id="m-hint"></div>
+  <div class="match-grid" id="match-grid"></div>
+</div>
+
+<!-- STAGE 2: FLASHCARDS -->
+<div class="screen" id="screen-2">
+  <div class="stage-title">🧠 Запомни слова</div>
+  <div class="stage-sub">Нажми на карточку, чтобы увидеть перевод. Изучи все — потом предложения!</div>
+  <div class="fc-progress-wrap"><div class="fc-progress" id="fc-progress" style="width:0%"></div></div>
+  <div class="fc-counter" id="fc-counter">1 / 6</div>
+  <div class="card-scene" onclick="flipCard()">
+    <div class="card-3d" id="card-3d">
+      <div class="card-face card-front">
+        <div class="fc-en" id="fc-en"></div>
+        <div class="fc-tap">👆 нажми, чтобы увидеть перевод</div>
+      </div>
+      <div class="card-face card-back">
+        <div class="fc-ru" id="fc-ru"></div>
+      </div>
+    </div>
+  </div>
+  <div class="fc-seen-row" id="fc-dots"></div>
+  <div class="fc-nav">
+    <button id="btn-prev" onclick="prevCard()" disabled>← Назад</button>
+    <button id="btn-next" onclick="nextCard()">Вперёд →</button>
+  </div>
+  <button class="start-test-btn" id="start-test-btn" onclick="goToStage(3)" disabled>
+    Изучи все карточки, чтобы продолжить
+  </button>
+</div>
+
+<!-- STAGE 3: LISTEN & TYPE -->
+<div class="screen" id="screen-3">
+  <div class="stage-title">🎧 Послушай и напиши</div>
+  <div class="stage-sub">Нажми 🔊 — послушай и напиши. Нажми 🐢 — медленнее.</div>
+  <div class="prog-wrap"><div class="prog-bar" id="prog-3" style="width:0%"></div></div>
+  <div class="q-prog" id="q-prog3">Предложение 1 из 4</div>
+
+  <div class="listen-row">
+    <button class="listen-btn" id="lb3" onclick="speak3(false)">🔊</button>
+    <button class="slow-btn" id="sb3" onclick="speak3(true)">
+      <span class="slow-icon">🐢</span>медленнее
+    </button>
+  </div>
+  <div class="listen-sub" id="ls3">Нажми, чтобы послушать</div>
+
+  <button class="hint-toggle" id="hint-toggle3" onclick="toggleHint()">
+    <span class="arr">▶</span> Показать перевод
+  </button>
+  <div class="ru-hint-box" id="ru-hint3"></div>
+
+  <textarea class="type-input" id="type-input3" rows="2" placeholder="Напиши предложение здесь..." autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+  <div class="correct-ans" id="correct-ans3"></div>
+  <div class="feedback-line" id="fb3"></div>
+  <button class="next-btn" id="next3" onclick="handleNext3()" disabled>Проверить</button>
+</div>
+
+<!-- FINISH -->
+<div class="screen" id="screen-finish">
+  <div class="fin-top">
+    <div class="fin-emoji" id="fin-emoji"></div>
+    <div class="fin-title" id="fin-title"></div>
+    <div class="fin-sub" id="fin-sub"></div>
+  </div>
+  <div class="fin-stats">
+    <div class="fin-stat"><div class="fin-stat-n g" id="fs-c">0</div><div class="fin-stat-l">верных</div></div>
+    <div class="fin-stat"><div class="fin-stat-n r" id="fs-w">0</div><div class="fin-stat-l">ошибок</div></div>
+    <div class="fin-stat"><div class="fin-stat-n p">4</div><div class="fin-stat-l">предложений</div></div>
+  </div>
+  <div class="history-title">📊 История попыток</div>
+  <div class="history-list" id="history-list"></div>
+  <button class="restart-btn" onclick="restartGame()">Попробовать снова</button>
+</div>
+
+<script>
+const STORAGE_KEY = 'city_places_history';
+
+const matchWords = [
+  { en: 'wrong',    ru: 'неверно, неправильно' },
+  { en: 'floor',    ru: 'пол' },
+  { en: 'phone',    ru: 'телефон' },
+  { en: 'describe', ru: 'описать' },
+  { en: 'building', ru: 'здание' },
+  { en: 'flat',     ru: 'квартира' },
+  { en: 'bridge',   ru: 'мост' },
+  { en: 'beach',    ru: 'пляж' },
+  { en: 'look for', ru: 'искать' },
+  { en: 'scarf',    ru: 'шарф' },
+];
+
+const flashcards = [
+  { en: 'describe', ru: 'описать' },
+  { en: 'building', ru: 'здание' },
+  { en: 'flat',     ru: 'квартира' },
+  { en: 'bridge',   ru: 'мост' },
+  { en: 'look for', ru: 'искать' },
+  { en: 'scarf',    ru: 'шарф' },
+];
+
+const sentences = [
+  { en: 'Can you describe this building?',              ru: 'Ты можешь описать это здание?' },
+  { en: "I'm looking for my scarf.",                    ru: 'Я ищу свой шарф.' },
+  { en: "She lives in a flat. She doesn't live in a house.", ru: 'Она живёт в квартире. Она не живёт в доме.' },
+  { en: 'The bridge is next to the beach.',             ru: 'Мост находится рядом с пляжем.' },
+];
+
+const matchColors = [
+  '#E6F1FB:#185FA5','#E1F5EE:#0F6E56','#FAEEDA:#854F0B','#F5F3FF:#4C1D95',
+  '#EAF3DE:#3B6D11','#FAECE7:#993C1D','#FEF3C7:#92400E','#FCE7F3:#9D174D',
+  '#ECFDF5:#065F46','#EFF6FF:#1D4ED8'
+];
+
+let totalErrors = 0;
+function shuffle(arr) { return [...arr].sort(() => Math.random() - .5); }
+function normalize(str) { return str.toLowerCase().replace(/[.,!?'"]/g,'').replace(/\s+/g,' ').trim(); }
+
+// ── EDITOR ──
+let editorOpen = false;
+function toggleEditor() {
+  editorOpen = !editorOpen;
+  document.getElementById('editor-panel').classList.toggle('show', editorOpen);
+}
+
+function goToStage(n) {
+  editorOpen = false;
+  document.getElementById('editor-panel').classList.remove('show');
+  if (n === 1) { showScreen(1); initMatch(); }
+  else if (n === 2) { showScreen(2); initFlashcards(); }
+  else if (n === 3) { showScreen(3); initStage3(); }
+}
+
+// ── SCREEN ──
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('show'));
+  document.getElementById('screen-' + id).classList.add('show');
+  const labels = {
+    1:'Этап 1 из 3 — Сопоставь',
+    2:'Этап 2 из 3 — Карточки',
+    3:'Этап 3 из 3 — Предложения',
+    finish:'Готово!'
+  };
+  document.getElementById('stage-label').textContent = labels[id] || '';
+  ['dot-1','dot-2','dot-3'].forEach((d,i) => {
+    const el = document.getElementById(d);
+    el.className = 'stage-dot';
+    if (id === 'finish') { el.classList.add('done'); return; }
+    const n = parseInt(id);
+    if (i+1 < n) el.classList.add('done');
+    else if (i+1 === n) el.classList.add('active');
+  });
+}
+
+// ══ STAGE 1: MATCH ══
+let mSelEn=null, mSelRu=null, mMatched=0, mErrors=0;
+
+function initMatch() {
+  mSelEn=null; mSelRu=null; mMatched=0; mErrors=0;
+  document.getElementById('m-found').textContent=0;
+  document.getElementById('m-hint').textContent='';
+  const grid=document.getElementById('match-grid');
+  grid.innerHTML='';
+  const enList=shuffle(matchWords.map(w=>w.en));
+  const ruList=shuffle(matchWords.map(w=>w.ru));
+  for(let i=0;i<matchWords.length;i++){
+    grid.appendChild(makeCard('en',enList[i]));
+    grid.appendChild(makeCard('ru',ruList[i]));
+  }
+}
+
+function makeCard(type,word){
+  const el=document.createElement('div');
+  el.className='match-card '+type+'-card';
+  el.id=(type==='en'?'men-':'mru-')+word.replace(/[^a-zа-яё]/gi,'_');
+  el.textContent=word;
+  el.onclick=()=>tapCard(type,word,el);
+  return el;
+}
+
+function tapCard(type,word,el){
+  if(el.classList.contains('matched'))return;
+  document.querySelectorAll('.'+type+'-card').forEach(c=>c.classList.remove('sel'));
+  if(type==='en'){if(mSelEn===word){mSelEn=null;setHintM('');return;}mSelEn=word;}
+  else{if(mSelRu===word){mSelRu=null;setHintM('');return;}mSelRu=word;}
+  el.classList.add('sel');
+  if(type==='en'&&!mSelRu)setHintM('Теперь выбери перевод');
+  if(type==='ru'&&!mSelEn)setHintM('Теперь выбери английское слово');
+  if(mSelEn&&mSelRu)checkPair();
+}
+
+function setHintM(t){document.getElementById('m-hint').textContent=t;}
+
+function checkPair(){
+  const pair=matchWords.find(w=>w.en===mSelEn);
+  const ok=pair&&pair.ru===mSelRu;
+  const enEl=document.getElementById('men-'+mSelEn.replace(/[^a-zа-яё]/gi,'_'));
+  const ruEl=document.getElementById('mru-'+mSelRu.replace(/[^a-zа-яё]/gi,'_'));
+  if(ok){
+    mMatched++;
+    document.getElementById('m-found').textContent=mMatched;
+    const col=matchColors[(mMatched-1)%matchColors.length].split(':');
+    [enEl,ruEl].forEach(el=>{
+      el.style.background=col[0];el.style.borderColor=col[1];el.style.color=col[1];
+      el.classList.remove('sel');el.classList.add('matched');
+    });
+    setHintM('');
+    if(mMatched===matchWords.length){
+      totalErrors+=mErrors;
+      setTimeout(()=>{showScreen(2);initFlashcards();},600);
+    }
+  } else {
+    mErrors++;
+    [enEl,ruEl].forEach(el=>{el.classList.remove('sel');el.classList.add('wrong');setTimeout(()=>el.classList.remove('wrong'),400);});
+    setHintM('Не совпадает — попробуй ещё!');
+  }
+  mSelEn=null;mSelRu=null;
+}
+
+// ══ STAGE 2: FLASHCARDS ══
+let fcIdx=0, fcFlipped=false, fcSeen=new Set();
+
+function initFlashcards(){
+  fcIdx=0;fcFlipped=false;fcSeen=new Set();
+  buildDots();loadCard();
+}
+
+function buildDots(){
+  const row=document.getElementById('fc-dots');
+  row.innerHTML='';
+  flashcards.forEach((_,i)=>{
+    const d=document.createElement('div');
+    d.className='fc-dot';d.id='dot-fc-'+i;
+    row.appendChild(d);
+  });
+}
+
+function loadCard(){
+  const card=flashcards[fcIdx];
+  document.getElementById('fc-en').textContent=card.en;
+  document.getElementById('fc-ru').textContent=card.ru;
+  document.getElementById('fc-counter').textContent=`${fcIdx+1} / ${flashcards.length}`;
+  document.getElementById('fc-progress').style.width=((fcIdx+1)/flashcards.length*100)+'%';
+  document.getElementById('btn-prev').disabled=fcIdx===0;
+  document.getElementById('btn-next').textContent=fcIdx===flashcards.length-1?'Ещё раз с начала':'Вперёд →';
+  fcFlipped=false;
+  document.getElementById('card-3d').classList.remove('flipped');
+  updateStartBtn();
+}
+
+function flipCard(){
+  fcFlipped=!fcFlipped;
+  document.getElementById('card-3d').classList.toggle('flipped',fcFlipped);
+  if(fcFlipped){
+    fcSeen.add(fcIdx);
+    document.getElementById('dot-fc-'+fcIdx).classList.add('seen');
+    updateStartBtn();
+  }
+}
+
+function nextCard(){
+  if(fcIdx<flashcards.length-1){fcIdx++;loadCard();}
+  else{fcIdx=0;loadCard();}
+}
+function prevCard(){ if(fcIdx>0){fcIdx--;loadCard();} }
+
+function updateStartBtn(){
+  const btn=document.getElementById('start-test-btn');
+  if(fcSeen.size===flashcards.length){
+    btn.disabled=false;btn.textContent='Перейти к предложениям →';
+  }
+}
+
+// ══ STAGE 3: LISTEN & TYPE ══
+const synth=window.speechSynthesis;
+let voices=[];
+speechSynthesis.onvoiceschanged=()=>{voices=synth.getVoices();};
+voices=synth.getVoices();
+
+let s3Idx=0, s3Current=null, s3Checked=false, s3Errors=0;
+
+function initStage3(){ s3Idx=0;s3Checked=false;s3Errors=0;loadSentence(); }
+
+function speakText(text,slow,mainBtnId,slowBtnId,subId){
+  synth.cancel();
+  const utt=new SpeechSynthesisUtterance(text);
+  utt.lang='en-US'; utt.rate=slow?0.55:0.82;
+  const v=voices.find(v=>v.lang==='en-US')||voices.find(v=>v.lang.startsWith('en'));
+  if(v)utt.voice=v;
+  const mb=document.getElementById(mainBtnId);
+  const sb=document.getElementById(slowBtnId);
+  const sub=document.getElementById(subId);
+  if(mb)mb.classList.add('speaking');
+  if(sb&&slow)sb.classList.add('speaking');
+  if(sub)sub.textContent=slow?'🐢 Медленно...':'Слушай...';
+  utt.onend=()=>{
+    if(mb)mb.classList.remove('speaking');
+    if(sb)sb.classList.remove('speaking');
+    if(sub)sub.textContent='Нажми 🔊 ещё раз или 🐢 для медленного повтора';
+  };
+  synth.speak(utt);
+}
+
+function speak3(slow){ if(s3Current)speakText(s3Current.en,slow,'lb3','sb3','ls3'); }
+
+function loadSentence(){
+  s3Current=sentences[s3Idx];
+  s3Checked=false;
+  document.getElementById('q-prog3').textContent=`Предложение ${s3Idx+1} из ${sentences.length}`;
+  document.getElementById('prog-3').style.width=(s3Idx/sentences.length*100)+'%';
+  document.getElementById('ru-hint3').textContent=s3Current.ru;
+  document.getElementById('ru-hint3').classList.remove('show');
+  const toggle=document.getElementById('hint-toggle3');
+  toggle.classList.remove('open');
+  toggle.innerHTML='<span class="arr">▶</span> Показать перевод';
+  document.getElementById('fb3').textContent='';
+  document.getElementById('fb3').className='feedback-line';
+  document.getElementById('correct-ans3').style.display='none';
+  document.getElementById('next3').textContent='Проверить';
+  document.getElementById('next3').disabled=true;
+  document.getElementById('ls3').textContent='Нажми, чтобы послушать';
+  ['lb3','sb3'].forEach(id=>document.getElementById(id).classList.remove('speaking'));
+  const inp=document.getElementById('type-input3');
+  inp.value='';inp.className='type-input';inp.disabled=false;
+  setTimeout(()=>speak3(false),400);
+}
+
+function toggleHint(){
+  const box=document.getElementById('ru-hint3');
+  const toggle=document.getElementById('hint-toggle3');
+  const isOpen=box.classList.contains('show');
+  box.classList.toggle('show');
+  toggle.classList.toggle('open');
+  toggle.innerHTML=isOpen?'<span class="arr">▶</span> Показать перевод':'<span class="arr">▶</span> Скрыть перевод';
+}
+
+document.getElementById('type-input3').addEventListener('input',function(){
+  if(!s3Checked)document.getElementById('next3').disabled=this.value.trim().length===0;
+});
+document.getElementById('type-input3').addEventListener('keydown',function(e){
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();handleNext3();}
+});
+
+function handleNext3(){ if(!s3Checked)checkSentence(); else nextSentence(); }
+
+function checkSentence(){
+  const inp=document.getElementById('type-input3');
+  const answer=normalize(inp.value);
+  const correct=normalize(s3Current.en);
+  s3Checked=true;inp.disabled=true;
+  const fb=document.getElementById('fb3');
+  const ansBox=document.getElementById('correct-ans3');
+  const next=document.getElementById('next3');
+  if(answer===correct){
+    inp.classList.add('correct');
+    fb.textContent='✓ Верно!';fb.className='feedback-line ok';
+  } else {
+    inp.classList.add('wrong');
+    fb.textContent='✗ Не совсем точно';fb.className='feedback-line err';
+    ansBox.textContent='Правильно: '+s3Current.en;ansBox.style.display='block';
+    s3Errors++;
+  }
+  next.textContent=s3Idx+1>=sentences.length?'Завершить 🎉':'Следующее →';
+  next.disabled=false;
+}
+
+function nextSentence(){
+  s3Idx++;
+  if(s3Idx>=sentences.length){
+    totalErrors+=s3Errors;
+    showFinish();
+  } else loadSentence();
+}
+
+// ── HISTORY ──
+function loadHistory(){
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); } catch{ return []; }
+}
+function saveHistory(history){
+  try { localStorage.setItem(STORAGE_KEY,JSON.stringify(history)); } catch{}
+}
+function addAttempt(errors){
+  const history=loadHistory();
+  history.unshift({ errors, date: new Date().toLocaleDateString('ru-RU') });
+  if(history.length>10) history.pop();
+  saveHistory(history);
+  return history;
+}
+function renderHistory(history){
+  const list=document.getElementById('history-list');
+  list.innerHTML='';
+  if(!history.length){
+    list.innerHTML='<div class="history-empty">Это первая попытка!</div>';
+    return;
+  }
+  history.forEach((item,i)=>{
+    const div=document.createElement('div');
+    div.className='history-item';
+    const errClass=item.errors===0?'zero':'some';
+    const errText=item.errors===0?'Без ошибок ✓':item.errors+' '+(item.errors===1?'ошибка':item.errors<5?'ошибки':'ошибок');
+    div.innerHTML=`
+      <span class="h-attempt">Попытка ${history.length-i}</span>
+      <span class="h-errors ${errClass}">${errText}</span>
+      <span class="h-date">${item.date}</span>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function showFinish(){
+  const correct=sentences.length-s3Errors;
+  const pct=Math.round(correct/sentences.length*100);
+  const emoji=totalErrors===0?'🏆':pct>=75?'🎉':pct>=50?'💪':'📚';
+  const title=totalErrors===0?'Идеально!':pct>=75?'Отлично!':pct>=50?'Хорошая работа!':'Продолжай тренироваться!';
+  document.getElementById('fin-emoji').textContent=emoji;
+  document.getElementById('fin-title').textContent=title;
+  document.getElementById('fin-sub').innerHTML=
+    `Ошибок в этой попытке: <strong>${totalErrors}</strong>`;
+  document.getElementById('fs-c').textContent=correct;
+  document.getElementById('fs-w').textContent=s3Errors;
+  const history=addAttempt(totalErrors);
+  renderHistory(history);
+  showScreen('finish');
+}
+
+function restartGame(){
+  totalErrors=0;mErrors=0;
+  showScreen(1);initMatch();
+}
+
+initMatch();
+</script>
+</body>
+</html>
