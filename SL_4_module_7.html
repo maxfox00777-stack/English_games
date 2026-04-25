@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Irregular Verbs & Nouns</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #f4f3ee; color: #1a1a1a; min-height: 100vh; }
+
+  .header { background: #fff; border-bottom: 1px solid #e5e4de; padding: 1rem; text-align: center; position: sticky; top: 0; z-index: 10; }
+  .header h1 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .stages { display: flex; gap: 5px; justify-content: center; }
+  .stage-dot { width: 26px; height: 6px; border-radius: 99px; background: #e0dfd8; transition: background 0.3s; }
+  .stage-dot.active { background: #7C3AED; }
+  .stage-dot.done   { background: #3B6D11; }
+  .stage-label { font-size: 12px; color: #888; margin-top: 6px; }
+
+  .editor-btn { position: fixed; bottom: 16px; right: 16px; z-index: 100; width: 40px; height: 40px; border-radius: 50%; border: none; background: #e0dfd8; color: #888; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .editor-panel { position: fixed; bottom: 64px; right: 16px; z-index: 100; background: #fff; border: 1px solid #e5e4de; border-radius: 12px; padding: .8rem; display: none; flex-direction: column; gap: 6px; box-shadow: 0 4px 16px #0001; }
+  .editor-panel.show { display: flex; }
+  .editor-panel button { padding: 7px 14px; border-radius: 8px; border: 1px solid #ddd; background: #f9f8f4; font-size: 13px; cursor: pointer; font-family: inherit; color: #555; text-align: left; }
+
+  .screen { display: none; padding: 1.2rem 1rem 2rem; max-width: 520px; margin: 0 auto; }
+  .screen.show { display: block; }
+  .stage-title { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+  .stage-sub   { font-size: 13px; color: #666; margin-bottom: 1.2rem; line-height: 1.5; }
+
+  /* MATCH */
+  .match-score { text-align: center; font-size: 13px; color: #666; margin-bottom: .4rem; }
+  .match-hint  { text-align: center; font-size: 12px; color: #7C3AED; min-height: 16px; margin-bottom: .8rem; font-weight: 500; }
+  .match-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .match-card {
+    padding: 10px 8px; border-radius: 10px; border: 1.5px solid #ddd;
+    background: #fff; font-size: 12.5px; cursor: pointer; text-align: center;
+    transition: all 0.15s; line-height: 1.5; user-select: none;
+  }
+  .match-card:active { transform: scale(0.96); }
+  .match-card.sel     { border-color: #7C3AED; background: #F5F3FF; color: #4C1D95; box-shadow: 0 0 0 2px #7C3AED30; }
+  .match-card.matched { opacity: 0; pointer-events: none; transition: opacity 0.4s; }
+  .match-card.wrong   { border-color: #E24B4A; background: #FCEBEB; color: #791F1F; animation: shake .3s; }
+  .match-card.en-card { position: relative; }
+  .sound-icon { font-size: 10px; position: absolute; top: 4px; right: 5px; opacity: .5; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+
+  /* SHARED */
+  .prog-wrap { background: #e0dfd8; border-radius: 99px; height: 5px; margin-bottom: 1.2rem; }
+  .prog-bar  { height: 5px; border-radius: 99px; background: #7C3AED; transition: width 0.35s; }
+  .q-prog    { text-align: center; font-size: 13px; color: #888; margin-bottom: 1rem; }
+
+  /* STAGE 2 */
+  .verb-card { background: #fff; border: 1px solid #e5e4de; border-radius: 14px; padding: 1.4rem 1rem; text-align: center; margin-bottom: 1rem; }
+  .verb-v1   { font-size: 26px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
+  .verb-ru   { font-size: 14px; color: #888; margin-bottom: 10px; }
+  .verb-arrow { font-size: 20px; color: #bbb; margin-bottom: 6px; }
+  .verb-v2-label { font-size: 12px; color: #aaa; }
+
+  .listen-row { display: flex; gap: 10px; justify-content: center; align-items: center; margin-bottom: 1rem; }
+  .listen-btn { width: 52px; height: 52px; border-radius: 50%; border: none; background: #7C3AED; color: #fff; font-size: 22px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px #7C3AED40; transition: transform .15s, background .15s; flex-shrink: 0; }
+  .listen-btn:active { transform: scale(.93); background: #6D28D9; }
+  .listen-btn.speaking { background: #5B21B6; animation: pulse .8s infinite alternate; }
+  .slow-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 7px 11px; border-radius: 10px; border: 1.5px solid #ddd; background: #fff; font-size: 10px; color: #888; cursor: pointer; font-family: inherit; transition: all .15s; line-height: 1.3; }
+  .slow-btn:active { background: #eeeee8; }
+  .slow-icon { font-size: 16px; }
+  @keyframes pulse { from{box-shadow:0 4px 12px #7C3AED40} to{box-shadow:0 4px 20px #7C3AED90} }
+  .listen-sub { font-size: 11px; color: #bbb; text-align: center; margin-bottom: .8rem; }
+
+  .type-input { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1.5px solid #ddd; font-size: 18px; font-family: inherit; background: #fff; color: #1a1a1a; margin-bottom: .8rem; outline: none; transition: border-color .15s; text-align: center; letter-spacing: 1px; }
+  .type-input:focus   { border-color: #7C3AED; }
+  .type-input.correct { border-color: #639922; background: #EAF3DE; color: #27500A; }
+  .type-input.wrong   { border-color: #E24B4A; background: #FCEBEB; }
+
+  .correct-ans { font-size: 14px; color: #3B6D11; background: #EAF3DE; border-radius: 8px; padding: 8px 12px; margin-bottom: .8rem; display: none; text-align: center; font-weight: 600; }
+  .feedback-line { text-align: center; font-size: 14px; font-weight: 500; min-height: 20px; margin-bottom: .8rem; }
+  .feedback-line.ok  { color: #3B6D11; }
+  .feedback-line.err { color: #A32D2D; }
+
+  .next-btn { display: block; width: 100%; padding: 13px; border-radius: 10px; border: none; background: #7C3AED; color: #fff; font-size: 15px; cursor: pointer; font-family: inherit; }
+  .next-btn:active   { background: #6D28D9; }
+  .next-btn:disabled { background: #ccc; cursor: default; }
+
+  /* STAGE 3 */
+  .word-card { background: #fff; border: 1px solid #e5e4de; border-radius: 14px; padding: 1.4rem 1rem; text-align: center; margin-bottom: 1rem; }
+  .wrong-word { font-size: 28px; font-weight: 700; letter-spacing: 2px; color: #E24B4A; margin-bottom: 6px; }
+  .word-ru3   { font-size: 14px; color: #888; }
+
+  .hint-toggle { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 1rem; padding: 6px 14px; border-radius: 99px; border: 1px dashed #bbb; background: transparent; font-size: 12px; color: #999; cursor: pointer; font-family: inherit; width: 100%; justify-content: center; }
+  .hint-toggle .arr { transition: transform .2s; display: inline-block; }
+  .hint-toggle.open .arr { transform: rotate(90deg); }
+  .hint-box { background: #FEF3C7; border: 1px solid #FCD34D; border-radius: 10px; padding: .8rem 1rem; font-size: 13px; color: #78350F; margin-bottom: 1rem; display: none; line-height: 1.5; }
+  .hint-box.show { display: block; }
+
+  /* FINISH */
+  #screen-finish { padding: 2rem 1rem; max-width: 520px; margin: 0 auto; }
+  .fin-top { text-align: center; margin-bottom: 1.5rem; }
+  .fin-emoji { font-size: 52px; margin-bottom: 10px; }
+  .fin-title { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+  .fin-sub   { font-size: 14px; color: #666; line-height: 1.6; }
+  .fin-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 1.5rem; }
+  .fin-stat  { background: #fff; border: 1px solid #e5e4de; border-radius: 10px; padding: 12px 6px; text-align: center; }
+  .fin-stat-n { font-size: 22px; font-weight: 600; }
+  .fin-stat-l { font-size: 11px; color: #999; margin-top: 2px; }
+  .fin-stat-n.g { color: #3B6D11; } .fin-stat-n.r { color: #A32D2D; } .fin-stat-n.p { color: #7C3AED; }
+  .history-title { font-size: 14px; font-weight: 600; margin-bottom: .6rem; color: #555; }
+  .history-list  { display: flex; flex-direction: column; gap: 6px; margin-bottom: 1.5rem; }
+  .history-item  { display: flex; justify-content: space-between; align-items: center; background: #fff; border: 1px solid #e5e4de; border-radius: 10px; padding: 10px 14px; font-size: 13px; }
+  .h-attempt { color: #888; } .h-errors.zero { color: #3B6D11; font-weight: 600; } .h-errors.some { color: #A32D2D; font-weight: 600; } .h-date { font-size: 11px; color: #bbb; }
+  .history-empty { text-align: center; font-size: 13px; color: #bbb; padding: 1rem; }
+  .restart-btn { display: block; width: 100%; padding: 13px; border-radius: 10px; border: none; background: #7C3AED; color: #fff; font-size: 15px; cursor: pointer; font-family: inherit; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📚 Irregular Verbs & Nouns</h1>
+  <div class="stages">
+    <div class="stage-dot active" id="dot-1"></div>
+    <div class="stage-dot" id="dot-2"></div>
+    <div class="stage-dot" id="dot-3"></div>
+  </div>
+  <div class="stage-label" id="stage-label">Этап 1 из 3</div>
+</div>
+
+<button class="editor-btn" onclick="toggleEditor()">⚙️</button>
+<div class="editor-panel" id="editor-panel">
+  <button onclick="editorGo(1)">→ Этап 1: Сопоставь</button>
+  <button onclick="editorGo(2)">→ Этап 2: Вторая форма</button>
+  <button onclick="editorGo(3)">→ Этап 3: Исправь слово</button>
+</div>
+
+<!-- STAGE 1: MATCH -->
+<div class="screen show" id="screen-1">
+  <div class="stage-title">🔗 Соедини глагол с переводом</div>
+  <div class="stage-sub">Нажми на английский глагол — он озвучится. Затем выбери перевод.</div>
+  <div class="match-score">Найдено: <span id="m-found">0</span> / 10</div>
+  <div class="match-hint" id="m-hint"></div>
+  <div class="match-grid" id="match-grid"></div>
+</div>
+
+<!-- STAGE 2: FILL PAST FORM -->
+<div class="screen" id="screen-2">
+  <div class="stage-title">✏️ Напиши вторую форму</div>
+  <div class="stage-sub">Посмотри на глагол и напиши его форму прошедшего времени</div>
+  <div class="prog-wrap"><div class="prog-bar" id="prog-2" style="width:0%"></div></div>
+  <div class="q-prog" id="q-prog2">Глагол 1 из 10</div>
+
+  <div class="verb-card">
+    <div class="verb-v1" id="v2-v1"></div>
+    <div class="verb-ru" id="v2-ru"></div>
+    <div class="verb-arrow">↓</div>
+    <div class="verb-v2-label">вторая форма (Past Simple)</div>
+  </div>
+
+  <div class="listen-row">
+    <button class="listen-btn" id="lb2" onclick="speak2(false)">🔊</button>
+    <button class="slow-btn" id="sb2" onclick="speak2(true)"><span class="slow-icon">🐢</span>медленнее</button>
+  </div>
+  <div class="listen-sub" id="ls2">Нажми 🔊 чтобы послушать обе формы</div>
+
+  <input class="type-input" id="type-input2" type="text" placeholder="Вторая форма..." autocomplete="off" autocorrect="off" spellcheck="false" />
+  <div class="correct-ans" id="correct-ans2"></div>
+  <div class="feedback-line" id="fb2"></div>
+  <button class="next-btn" id="next2" onclick="handleNext2()" disabled>Проверить</button>
+</div>
+
+<!-- STAGE 3: FIX NOUNS -->
+<div class="screen" id="screen-3">
+  <div class="stage-title">🔍 Исправь ошибку в слове</div>
+  <div class="stage-sub">В каждом слове одна ошибка. Напиши правильно.</div>
+  <div class="prog-wrap"><div class="prog-bar" id="prog-3" style="width:0%"></div></div>
+  <div class="q-prog" id="q-prog3">Слово 1 из 5</div>
+
+  <div class="word-card">
+    <div class="wrong-word" id="wrong-word3"></div>
+    <div class="word-ru3" id="word-ru3"></div>
+  </div>
+
+  <button class="hint-toggle" id="hint-toggle3" onclick="toggleHint3()">
+    <span class="arr">▶</span> Подсказка
+  </button>
+  <div class="hint-box" id="hint-box3"></div>
+
+  <input class="type-input" id="type-input3" type="text" placeholder="Напиши правильно..." autocomplete="off" autocorrect="off" spellcheck="false" />
+  <div class="correct-ans" id="correct-ans3"></div>
+  <div class="feedback-line" id="fb3"></div>
+  <button class="next-btn" id="next3" onclick="handleNext3()" disabled>Проверить</button>
+</div>
+
+<!-- FINISH -->
+<div class="screen" id="screen-finish">
+  <div class="fin-top">
+    <div class="fin-emoji" id="fin-emoji"></div>
+    <div class="fin-title" id="fin-title"></div>
+    <div class="fin-sub" id="fin-sub"></div>
+  </div>
+  <div class="fin-stats">
+    <div class="fin-stat"><div class="fin-stat-n g" id="fs-c">0</div><div class="fin-stat-l">верных</div></div>
+    <div class="fin-stat"><div class="fin-stat-n r" id="fs-w">0</div><div class="fin-stat-l">ошибок</div></div>
+    <div class="fin-stat"><div class="fin-stat-n p">15</div><div class="fin-stat-l">заданий</div></div>
+  </div>
+  <div class="history-title">📊 История попыток</div>
+  <div class="history-list" id="history-list"></div>
+  <button class="restart-btn" onclick="restartGame()">Попробовать снова</button>
+</div>
+
+<script>
+const STORAGE_KEY = 'irregular_verbs_nouns';
+
+const verbs = [
+  { en:'be — was/were',   v1:'be',    v2:'was/were', ru:'быть',        speak:'be, was, were' },
+  { en:'break — broke',   v1:'break', v2:'broke',    ru:'ломать',      speak:'break, broke' },
+  { en:'build — built',   v1:'build', v2:'built',    ru:'строить',     speak:'build, built' },
+  { en:'buy — bought',    v1:'buy',   v2:'bought',   ru:'покупать',    speak:'buy, bought' },
+  { en:'have — had',      v1:'have',  v2:'had',      ru:'иметь',       speak:'have, had' },
+  { en:'can — could',     v1:'can',   v2:'could',    ru:'уметь, мочь', speak:'can, could' },
+  { en:'come — came',     v1:'come',  v2:'came',     ru:'приходить',   speak:'come, came' },
+  { en:'go — went',       v1:'go',    v2:'went',     ru:'идти',        speak:'go, went' },
+  { en:'ride — rode',     v1:'ride',  v2:'rode',     ru:'ездить верхом', speak:'ride, rode' },
+  { en:'see — saw',       v1:'see',   v2:'saw',      ru:'видеть',      speak:'see, saw' },
+];
+
+const fixItems = [
+  { wrong:'museam',    correct:'museum',   ru:'музей',          hint:'После muse — um, не am' },
+  { wrong:'dinosaure', correct:'dinosaur', ru:'динозавр',       hint:'Окончание — ur, без E в конце' },
+  { wrong:'consert',   correct:'concert',  ru:'концерт',        hint:'Буква c перед ert — не s' },
+  { wrong:'fameous',   correct:'famous',   ru:'знаменитый',     hint:'После fam — ous, без E' },
+  { wrong:'riddes',    correct:'rides',    ru:'американские горки', hint:'Одна d, не две' },
+];
+
+const matchColors = [
+  '#E6F1FB:#185FA5','#E1F5EE:#0F6E56','#FAEEDA:#854F0B','#F5F3FF:#4C1D95',
+  '#EAF3DE:#3B6D11','#FAECE7:#993C1D','#FEF3C7:#92400E','#FCE7F3:#9D174D',
+  '#ECFDF5:#065F46','#EFF6FF:#1D4ED8'
+];
+
+let totalErrors=0, totalCorrect=0;
+function shuffle(arr){return[...arr].sort(()=>Math.random()-.5);}
+function normalize(str){return str.toLowerCase().replace(/\s+/g,' ').trim();}
+
+// SPEECH
+const synth=window.speechSynthesis;
+let voices=[];
+speechSynthesis.onvoiceschanged=()=>{voices=synth.getVoices();};
+voices=synth.getVoices();
+function speakText(text,slow,mbId,sbId,subId){
+  synth.cancel();
+  const utt=new SpeechSynthesisUtterance(text);
+  utt.lang='en-US';utt.rate=slow?0.6:0.85;
+  const v=voices.find(v=>v.lang==='en-US')||voices.find(v=>v.lang.startsWith('en'));
+  if(v)utt.voice=v;
+  const mb=mbId?document.getElementById(mbId):null;
+  const sb=sbId?document.getElementById(sbId):null;
+  const sub=subId?document.getElementById(subId):null;
+  if(mb)mb.classList.add('speaking');
+  if(sb&&slow)sb.classList.add('speaking');
+  if(sub)sub.textContent=slow?'🐢 Медленно...':'Слушай...';
+  utt.onend=()=>{
+    if(mb)mb.classList.remove('speaking');
+    if(sb)sb.classList.remove('speaking');
+    if(sub)sub.textContent='Нажми 🔊 ещё раз или 🐢 для медленного повтора';
+  };
+  synth.speak(utt);
+}
+
+// EDITOR
+let editorOpen=false;
+function toggleEditor(){editorOpen=!editorOpen;document.getElementById('editor-panel').classList.toggle('show',editorOpen);}
+function editorGo(n){
+  editorOpen=false;document.getElementById('editor-panel').classList.remove('show');
+  if(n===1){showScreen(1);initMatch();}
+  else if(n===2){showScreen(2);initStage2();}
+  else if(n===3){showScreen(3);initStage3();}
+}
+
+// SCREEN
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));
+  document.getElementById('screen-'+id).classList.add('show');
+  const labels={1:'Этап 1 из 3 — Сопоставь',2:'Этап 2 из 3 — Вторая форма',3:'Этап 3 из 3 — Исправь слово',finish:'Готово!'};
+  document.getElementById('stage-label').textContent=labels[id]||'';
+  ['dot-1','dot-2','dot-3'].forEach((d,i)=>{
+    const el=document.getElementById(d);el.className='stage-dot';
+    if(id==='finish'){el.classList.add('done');return;}
+    const n=parseInt(id);
+    if(i+1<n)el.classList.add('done');else if(i+1===n)el.classList.add('active');
+  });
+}
+
+// ══ STAGE 1: MATCH ══
+let mSelEn=null,mSelRu=null,mMatched=0,mErrors=0;
+function initMatch(){
+  mSelEn=null;mSelRu=null;mMatched=0;mErrors=0;
+  document.getElementById('m-found').textContent=0;
+  document.getElementById('m-hint').textContent='';
+  const grid=document.getElementById('match-grid');grid.innerHTML='';
+  const enList=shuffle(verbs.map(v=>v.en));
+  const ruList=shuffle(verbs.map(v=>v.ru));
+  for(let i=0;i<verbs.length;i++){
+    grid.appendChild(makeMatchCard('en',enList[i]));
+    grid.appendChild(makeMatchCard('ru',ruList[i]));
+  }
+}
+function makeMatchCard(type,word){
+  const el=document.createElement('div');
+  el.className='match-card '+type+'-card';
+  el.id=(type==='en'?'men-':'mru-')+word.replace(/[^a-zа-яё]/gi,'_');
+  el.textContent=word;
+  if(type==='en'){
+    const icon=document.createElement('span');icon.className='sound-icon';icon.textContent='🔊';el.appendChild(icon);
+    el.onclick=()=>{ speakVerbMatch(word); tapCard(type,word,el); };
+  }else{
+    el.onclick=()=>tapCard(type,word,el);
+  }
+  return el;
+}
+function speakVerbMatch(enWord){
+  const verb=verbs.find(v=>v.en===enWord);
+  if(verb)speakText(verb.speak,false,null,null,null);
+}
+function tapCard(type,word,el){
+  if(el.classList.contains('matched'))return;
+  document.querySelectorAll('.'+type+'-card').forEach(c=>c.classList.remove('sel'));
+  if(type==='en'){if(mSelEn===word){mSelEn=null;setHintM('');return;}mSelEn=word;}
+  else{if(mSelRu===word){mSelRu=null;setHintM('');return;}mSelRu=word;}
+  el.classList.add('sel');
+  if(type==='en'&&!mSelRu)setHintM('Теперь выбери перевод');
+  if(type==='ru'&&!mSelEn)setHintM('Теперь выбери английское слово');
+  if(mSelEn&&mSelRu)checkPair();
+}
+function setHintM(t){document.getElementById('m-hint').textContent=t;}
+function checkPair(){
+  const pair=verbs.find(v=>v.en===mSelEn);
+  const ok=pair&&pair.ru===mSelRu;
+  const enEl=document.getElementById('men-'+mSelEn.replace(/[^a-zа-яё]/gi,'_'));
+  const ruEl=document.getElementById('mru-'+mSelRu.replace(/[^a-zа-яё]/gi,'_'));
+  if(ok){
+    mMatched++;document.getElementById('m-found').textContent=mMatched;
+    const col=matchColors[(mMatched-1)%matchColors.length].split(':');
+    [enEl,ruEl].forEach(el=>{el.style.background=col[0];el.style.borderColor=col[1];el.style.color=col[1];el.classList.remove('sel');el.classList.add('matched');});
+    setHintM('');
+    if(mMatched===verbs.length){totalErrors+=mErrors;setTimeout(()=>{showScreen(2);initStage2();},600);}
+  }else{
+    mErrors++;
+    [enEl,ruEl].forEach(el=>{el.classList.remove('sel');el.classList.add('wrong');setTimeout(()=>el.classList.remove('wrong'),400);});
+    setHintM('Не совпадает — попробуй ещё!');
+  }
+  mSelEn=null;mSelRu=null;
+}
+
+// ══ STAGE 2: FILL PAST FORM ══
+let s2Queue=[],s2Idx=0,s2Current=null,s2Checked=false,s2Errors=0;
+function initStage2(){s2Queue=shuffle([...verbs]);s2Idx=0;s2Checked=false;s2Errors=0;loadVerb();}
+function speak2(slow){if(s2Current)speakText(s2Current.speak,slow,'lb2','sb2','ls2');}
+function loadVerb(){
+  s2Current=s2Queue[s2Idx];s2Checked=false;
+  document.getElementById('v2-v1').textContent=s2Current.v1;
+  document.getElementById('v2-ru').textContent=s2Current.ru;
+  document.getElementById('q-prog2').textContent=`Глагол ${s2Idx+1} из ${s2Queue.length}`;
+  document.getElementById('prog-2').style.width=(s2Idx/s2Queue.length*100)+'%';
+  document.getElementById('fb2').textContent='';document.getElementById('fb2').className='feedback-line';
+  document.getElementById('correct-ans2').style.display='none';
+  document.getElementById('next2').textContent='Проверить';document.getElementById('next2').disabled=true;
+  document.getElementById('ls2').textContent='Нажми 🔊 чтобы послушать обе формы';
+  ['lb2','sb2'].forEach(id=>document.getElementById(id).classList.remove('speaking'));
+  const inp=document.getElementById('type-input2');inp.value='';inp.className='type-input';inp.disabled=false;
+  setTimeout(()=>speak2(false),400);
+}
+document.getElementById('type-input2').addEventListener('input',function(){
+  if(!s2Checked)document.getElementById('next2').disabled=this.value.trim().length===0;
+});
+document.getElementById('type-input2').addEventListener('keydown',function(e){if(e.key==='Enter')handleNext2();});
+function handleNext2(){if(!s2Checked)checkVerb();else nextVerb();}
+function checkVerb(){
+  const inp=document.getElementById('type-input2');
+  const answer=normalize(inp.value);
+  const correct=normalize(s2Current.v2);
+  s2Checked=true;inp.disabled=true;
+  const fb=document.getElementById('fb2');const ansBox=document.getElementById('correct-ans2');const next=document.getElementById('next2');
+  if(answer===correct){
+    inp.classList.add('correct');fb.textContent='✓ Верно!';fb.className='feedback-line ok';totalCorrect++;
+  }else{
+    inp.classList.add('wrong');fb.textContent='✗ Правильно: '+s2Current.v2;fb.className='feedback-line err';
+    ansBox.textContent=s2Current.v1+' → '+s2Current.v2;ansBox.style.display='block';s2Errors++;totalErrors++;
+  }
+  next.textContent=s2Idx+1>=s2Queue.length?'Следующий этап →':'Следующее →';next.disabled=false;
+}
+function nextVerb(){s2Idx++;if(s2Idx>=s2Queue.length){showScreen(3);initStage3();}else loadVerb();}
+
+// ══ STAGE 3: FIX NOUNS ══
+let s3Queue=[],s3Idx=0,s3Current=null,s3Checked=false,s3Errors=0;
+function initStage3(){s3Queue=shuffle([...fixItems]);s3Idx=0;s3Checked=false;s3Errors=0;loadFix();}
+function loadFix(){
+  s3Current=s3Queue[s3Idx];s3Checked=false;
+  document.getElementById('wrong-word3').textContent=s3Current.wrong;
+  document.getElementById('word-ru3').textContent=s3Current.ru;
+  document.getElementById('q-prog3').textContent=`Слово ${s3Idx+1} из ${s3Queue.length}`;
+  document.getElementById('prog-3').style.width=(s3Idx/s3Queue.length*100)+'%';
+  document.getElementById('fb3').textContent='';document.getElementById('fb3').className='feedback-line';
+  document.getElementById('correct-ans3').style.display='none';
+  document.getElementById('next3').textContent='Проверить';document.getElementById('next3').disabled=true;
+  document.getElementById('hint-box3').textContent=s3Current.hint;
+  document.getElementById('hint-box3').classList.remove('show');
+  const toggle=document.getElementById('hint-toggle3');toggle.classList.remove('open');
+  toggle.innerHTML='<span class="arr">▶</span> Подсказка';
+  const inp=document.getElementById('type-input3');inp.value='';inp.className='type-input';inp.disabled=false;
+  setTimeout(()=>inp.focus(),100);
+}
+function toggleHint3(){
+  const box=document.getElementById('hint-box3');const toggle=document.getElementById('hint-toggle3');
+  const isOpen=box.classList.contains('show');box.classList.toggle('show');toggle.classList.toggle('open');
+  toggle.innerHTML=isOpen?'<span class="arr">▶</span> Подсказка':'<span class="arr">▶</span> Скрыть';
+}
+document.getElementById('type-input3').addEventListener('input',function(){
+  if(!s3Checked)document.getElementById('next3').disabled=this.value.trim().length===0;
+});
+document.getElementById('type-input3').addEventListener('keydown',function(e){if(e.key==='Enter')handleNext3();});
+function handleNext3(){if(!s3Checked)checkFix();else nextFix();}
+function checkFix(){
+  const inp=document.getElementById('type-input3');
+  const answer=normalize(inp.value);
+  const correct=normalize(s3Current.correct);
+  s3Checked=true;inp.disabled=true;
+  const fb=document.getElementById('fb3');const ansBox=document.getElementById('correct-ans3');const next=document.getElementById('next3');
+  if(answer===correct){
+    inp.classList.add('correct');fb.textContent='✓ Верно!';fb.className='feedback-line ok';totalCorrect++;
+  }else{
+    inp.classList.add('wrong');fb.textContent='✗ Не совсем';fb.className='feedback-line err';
+    ansBox.textContent='Правильно: '+s3Current.correct;ansBox.style.display='block';s3Errors++;totalErrors++;
+  }
+  next.textContent=s3Idx+1>=s3Queue.length?'Завершить 🎉':'Следующее →';next.disabled=false;
+}
+function nextFix(){s3Idx++;if(s3Idx>=s3Queue.length)showFinish();else loadFix();}
+
+// HISTORY
+function loadHistory(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');}catch{return[];}}
+function saveHistory(h){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(h));}catch{}}
+function addAttempt(errors){const h=loadHistory();h.unshift({errors,date:new Date().toLocaleDateString('ru-RU')});if(h.length>10)h.pop();saveHistory(h);return h;}
+function renderHistory(history){
+  const list=document.getElementById('history-list');list.innerHTML='';
+  if(!history.length){list.innerHTML='<div class="history-empty">Это первая попытка!</div>';return;}
+  history.forEach((item,i)=>{
+    const div=document.createElement('div');div.className='history-item';
+    const errClass=item.errors===0?'zero':'some';
+    const errText=item.errors===0?'Без ошибок ✓':item.errors+(item.errors===1?' ошибка':item.errors<5?' ошибки':' ошибок');
+    div.innerHTML=`<span class="h-attempt">Попытка ${history.length-i}</span><span class="h-errors ${errClass}">${errText}</span><span class="h-date">${item.date}</span>`;
+    list.appendChild(div);
+  });
+}
+function showFinish(){
+  const total=15;const pct=Math.round(totalCorrect/total*100);
+  const emoji=totalErrors===0?'🏆':pct>=80?'🎉':pct>=50?'💪':'📚';
+  const title=totalErrors===0?'Идеально!':pct>=80?'Отлично!':pct>=50?'Хорошая работа!':'Продолжай тренироваться!';
+  document.getElementById('fin-emoji').textContent=emoji;
+  document.getElementById('fin-title').textContent=title;
+  document.getElementById('fin-sub').innerHTML=`Правильных ответов: <strong>${totalCorrect} из ${total}</strong> (${pct}%)`;
+  document.getElementById('fs-c').textContent=totalCorrect;document.getElementById('fs-w').textContent=totalErrors;
+  const history=addAttempt(totalErrors);renderHistory(history);showScreen('finish');
+}
+function restartGame(){totalErrors=0;totalCorrect=0;showScreen(1);initMatch();}
+
+initMatch();
+</script>
+</body>
+</html>
