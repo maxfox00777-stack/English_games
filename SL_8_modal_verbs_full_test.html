@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modal Verbs — Full Test</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #f4f3ee; color: #1a1a1a; min-height: 100vh; }
+
+  .header { background: #fff; border-bottom: 1px solid #e5e4de; padding: .8rem 1rem; text-align: center; position: sticky; top: 0; z-index: 10; }
+  .header h1 { font-size: 16px; font-weight: 600; margin-bottom: 5px; }
+  .stages-row { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+  .stage-dot { width: 18px; height: 5px; border-radius: 99px; background: #e0dfd8; transition: background 0.3s; }
+  .stage-dot.active { background: #7C3AED; }
+  .stage-dot.done   { background: #3B6D11; }
+  .stage-label { font-size: 11px; color: #888; margin-top: 5px; }
+
+  .editor-btn { position: fixed; bottom: 16px; right: 16px; z-index: 100; width: 38px; height: 38px; border-radius: 50%; border: none; background: #e0dfd8; color: #888; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .editor-panel { position: fixed; bottom: 62px; right: 16px; z-index: 100; background: #fff; border: 1px solid #e5e4de; border-radius: 12px; padding: .7rem; display: none; flex-direction: column; gap: 5px; box-shadow: 0 4px 16px #0001; max-height: 70vh; overflow-y: auto; }
+  .editor-panel.show { display: flex; }
+  .editor-panel button { padding: 6px 12px; border-radius: 7px; border: 1px solid #ddd; background: #f9f8f4; font-size: 12px; cursor: pointer; font-family: inherit; color: #555; text-align: left; white-space: nowrap; }
+
+  .screen { display: none; padding: 1rem 1rem 2rem; max-width: 560px; margin: 0 auto; }
+  .screen.show { display: block; }
+
+  /* ── SUMMARY ── */
+  .summary-hero { text-align: center; padding: 1.5rem 0 1rem; }
+  .summary-hero h2 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .summary-hero p  { font-size: 13px; color: #666; line-height: 1.5; }
+
+  .summary-section { margin-bottom: 1.2rem; }
+  .summary-section h3 { font-size: 14px; font-weight: 700; color: #7C3AED; margin-bottom: .5rem; padding-bottom: 4px; border-bottom: 1px solid #e5e4de; }
+  .modal-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+  .modal-tag { font-weight: 700; font-size: 14px; color: #185FA5; min-width: 90px; }
+  .modal-desc { font-size: 13px; color: #444; line-height: 1.4; flex: 1; }
+  .modal-ex { font-size: 12px; color: #888; font-style: italic; margin-left: 98px; margin-bottom: 4px; }
+
+  .ready-btn { display: block; width: 100%; padding: 15px; border-radius: 12px; border: none; background: #7C3AED; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; margin-top: 1.5rem; }
+  .ready-btn:active { background: #6D28D9; }
+
+  /* ── STAGE HEADER ── */
+  .stage-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .stage-sub   { font-size: 13px; color: #666; margin-bottom: 1rem; line-height: 1.5; }
+
+  .prog-wrap { background: #e0dfd8; border-radius: 99px; height: 5px; margin-bottom: 1rem; }
+  .prog-bar  { height: 5px; border-radius: 99px; background: #7C3AED; transition: width 0.35s; }
+  .q-prog    { text-align: center; font-size: 13px; color: #888; margin-bottom: .8rem; }
+
+  /* MINI GRAMMAR REMINDER */
+  .mini-grammar { background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; font-size: 13px; color: #1E3A5F; line-height: 1.7; }
+  .mini-grammar b { color: #1E40AF; }
+  .mini-grammar .mg-title { font-weight: 700; font-size: 14px; color: #1E40AF; margin-bottom: 6px; display: block; }
+
+  /* MATCH */
+  .match-score { text-align: center; font-size: 13px; color: #666; margin-bottom: .4rem; }
+  .match-hint  { text-align: center; font-size: 12px; color: #7C3AED; min-height: 16px; margin-bottom: .6rem; font-weight: 500; }
+  .match-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+  .match-card { padding: 9px 7px; border-radius: 10px; border: 1.5px solid #ddd; background: #fff; font-size: 12px; cursor: pointer; text-align: center; transition: all 0.15s; line-height: 1.4; user-select: none; }
+  .match-card:active { transform: scale(0.96); }
+  .match-card.sel     { border-color: #7C3AED; background: #F5F3FF; color: #4C1D95; box-shadow: 0 0 0 2px #7C3AED30; }
+  .match-card.matched { opacity: 0; pointer-events: none; transition: opacity 0.4s; }
+  .match-card.wrong   { border-color: #E24B4A; background: #FCEBEB; color: #791F1F; animation: shake .3s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+
+  /* SITUATION + OPTIONS */
+  .situation-box { background: #fff; border: 1px solid #e5e4de; border-radius: 14px; padding: 1.2rem; margin-bottom: 1rem; }
+  .situation-text { font-size: 16px; line-height: 1.5; color: #333; }
+  .situation-en   { font-size: 14px; color: #888; font-style: italic; margin-top: 6px; }
+
+  .options-col { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1rem; }
+  .opt-btn { padding: 12px 14px; border-radius: 10px; border: 1.5px solid #ddd; background: #fff; font-size: 14px; cursor: pointer; text-align: left; transition: all .15s; font-family: inherit; color: #1a1a1a; line-height: 1.4; }
+  .opt-btn:active { transform: scale(.98); }
+  .opt-btn.correct { background: #EAF3DE; border-color: #639922; color: #27500A; }
+  .opt-btn.wrong   { background: #FCEBEB; border-color: #E24B4A; color: #791F1F; }
+  .opt-btn.reveal  { background: #EAF3DE; border-color: #639922; color: #27500A; }
+  .opt-btn.dim     { opacity: .35; pointer-events: none; }
+
+  .feedback-line { text-align: center; font-size: 14px; font-weight: 500; min-height: 20px; margin-bottom: .8rem; }
+  .feedback-line.ok  { color: #3B6D11; }
+  .feedback-line.err { color: #A32D2D; }
+
+  .explain-box { background: #F0FDF4; border: 1px solid #86EFAC; border-radius: 10px; padding: .8rem 1rem; font-size: 13px; color: #14532D; margin-bottom: .8rem; display: none; line-height: 1.5; }
+
+  /* TYPE INPUT */
+  .type-input { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1.5px solid #ddd; font-size: 15px; font-family: inherit; background: #fff; color: #1a1a1a; margin-bottom: .8rem; outline: none; transition: border-color .15s; resize: none; }
+  .type-input:focus   { border-color: #7C3AED; }
+  .type-input.correct { border-color: #639922; background: #EAF3DE; color: #27500A; }
+  .type-input.wrong   { border-color: #E24B4A; background: #FCEBEB; }
+
+  .correct-ans { font-size: 13px; color: #3B6D11; background: #EAF3DE; border-radius: 8px; padding: 8px 12px; margin-bottom: .8rem; display: none; line-height: 1.5; }
+
+  .hint-toggle { display: inline-flex; align-items: center; gap: 6px; margin-bottom: .8rem; padding: 6px 14px; border-radius: 99px; border: 1px dashed #bbb; background: transparent; font-size: 12px; color: #999; cursor: pointer; font-family: inherit; width: 100%; justify-content: center; }
+  .hint-toggle .arr { transition: transform .2s; display: inline-block; }
+  .hint-toggle.open .arr { transform: rotate(90deg); }
+  .hint-box { background: #FEF3C7; border: 1px solid #FCD34D; border-radius: 10px; padding: .8rem 1rem; font-size: 13px; color: #78350F; margin-bottom: .8rem; display: none; line-height: 1.5; }
+  .hint-box.show { display: block; }
+
+  .next-btn { display: block; width: 100%; padding: 13px; border-radius: 10px; border: none; background: #7C3AED; color: #fff; font-size: 15px; cursor: pointer; font-family: inherit; }
+  .next-btn:active   { background: #6D28D9; }
+  .next-btn:disabled { background: #ccc; cursor: default; }
+
+  /* FINISH */
+  #screen-finish { padding: 2rem 1rem; max-width: 560px; margin: 0 auto; }
+  .fin-top { text-align: center; margin-bottom: 1.5rem; }
+  .fin-emoji { font-size: 52px; margin-bottom: 10px; }
+  .fin-title { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+  .fin-sub   { font-size: 14px; color: #666; line-height: 1.6; }
+  .fin-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 1.5rem; }
+  .fin-stat  { background: #fff; border: 1px solid #e5e4de; border-radius: 10px; padding: 12px 6px; text-align: center; }
+  .fin-stat-n { font-size: 22px; font-weight: 600; }
+  .fin-stat-l { font-size: 11px; color: #999; margin-top: 2px; }
+  .fin-stat-n.g { color: #3B6D11; } .fin-stat-n.r { color: #A32D2D; } .fin-stat-n.p { color: #7C3AED; }
+  .history-title { font-size: 14px; font-weight: 600; margin-bottom: .6rem; color: #555; }
+  .history-list  { display: flex; flex-direction: column; gap: 6px; margin-bottom: 1.5rem; }
+  .history-item  { display: flex; justify-content: space-between; align-items: center; background: #fff; border: 1px solid #e5e4de; border-radius: 10px; padding: 10px 14px; font-size: 13px; }
+  .h-attempt { color: #888; } .h-errors.zero { color: #3B6D11; font-weight: 600; } .h-errors.some { color: #A32D2D; font-weight: 600; } .h-date { font-size: 11px; color: #bbb; }
+  .history-empty { text-align: center; font-size: 13px; color: #bbb; padding: 1rem; }
+  .restart-btn { display: block; width: 100%; padding: 13px; border-radius: 10px; border: none; background: #7C3AED; color: #fff; font-size: 15px; cursor: pointer; font-family: inherit; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📘 Modal Verbs — Полный тест</h1>
+  <div class="stages-row">
+    <div class="stage-dot" id="dot-0"></div>
+    <div class="stage-dot" id="dot-1"></div>
+    <div class="stage-dot" id="dot-2"></div>
+    <div class="stage-dot" id="dot-3"></div>
+    <div class="stage-dot" id="dot-4"></div>
+    <div class="stage-dot" id="dot-5"></div>
+    <div class="stage-dot" id="dot-6"></div>
+    <div class="stage-dot" id="dot-7"></div>
+    <div class="stage-dot" id="dot-8"></div>
+  </div>
+  <div class="stage-label" id="stage-label">Конспект</div>
+</div>
+
+<button class="editor-btn" onclick="toggleEditor()">⚙️</button>
+<div class="editor-panel" id="editor-panel">
+  <button onclick="editorGo(0)">→ Конспект</button>
+  <button onclick="editorGo(1)">→ Этап 1: Перевод</button>
+  <button onclick="editorGo(2)">→ Этап 2: Функции</button>
+  <button onclick="editorGo(3)">→ Этап 3: Выбери глагол</button>
+  <button onclick="editorGo(4)">→ Этап 4: Логические выводы</button>
+  <button onclick="editorGo(5)">→ Этап 5: Критика и советы</button>
+  <button onclick="editorGo(6)">→ Этап 6: Предложения</button>
+  <button onclick="editorGo(7)">→ Этап 7: Исправь ошибку</button>
+  <button onclick="editorGo(8)">→ Этап 8: Переведи сам</button>
+</div>
+
+<!-- SUMMARY -->
+<div class="screen show" id="screen-0">
+  <div class="summary-hero">
+    <h2>📖 Модальные глаголы</h2>
+    <p>Прочитай конспект перед тестом. Можно возвращаться к нему в любой момент через меню ⚙️</p>
+  </div>
+
+  <div class="summary-section">
+    <h3>🔵 Обязательство / Долг / Необходимость</h3>
+    <div class="modal-row"><span class="modal-tag">must</span><span class="modal-desc">Строгое обязательство, крайняя необходимость (от себя)</span></div>
+    <div class="modal-ex">If the pain persists, I must see a doctor.</div>
+    <div class="modal-row"><span class="modal-tag">have to</span><span class="modal-desc">Необходимость по обстоятельствам (извне)</span></div>
+    <div class="modal-ex">The vet says we have to give medicine to our dog.</div>
+    <div class="modal-row"><span class="modal-tag">had to</span><span class="modal-desc">Прошедшее время для must и have to</span></div>
+    <div class="modal-row"><span class="modal-tag">should / ought to</span><span class="modal-desc">Обязательство, рекомендация</span></div>
+    <div class="modal-ex">You should send her a card for her birthday.</div>
+  </div>
+
+  <div class="summary-section">
+    <h3>🔴 Отсутствие необходимости</h3>
+    <div class="modal-row"><span class="modal-tag">don't have to / needn't</span><span class="modal-desc">Нет необходимости (настоящее/будущее)</span></div>
+    <div class="modal-ex">You don't have to buy extra bread.</div>
+    <div class="modal-row"><span class="modal-tag">didn't have to</span><span class="modal-desc">Не было необходимости (прошлое)</span></div>
+    <div class="modal-ex">They didn't have to go shopping yesterday.</div>
+  </div>
+
+  <div class="summary-section">
+    <h3>🟢 Разрешение / Запрет</h3>
+    <div class="modal-row"><span class="modal-tag">can / may</span><span class="modal-desc">Разрешение (may — более формально)</span></div>
+    <div class="modal-ex">Can/May I borrow your pen?</div>
+    <div class="modal-row"><span class="modal-tag">mustn't / can't</span><span class="modal-desc">Запрет (правилами, законом)</span></div>
+    <div class="modal-ex">You mustn't talk loudly in the library.</div>
+  </div>
+
+  <div class="summary-section">
+    <h3>🟡 Возможность</h3>
+    <div class="modal-row"><span class="modal-tag">can</span><span class="modal-desc">Возможность в настоящем</span></div>
+    <div class="modal-ex">It can get pretty cold up here.</div>
+    <div class="modal-row"><span class="modal-tag">could / may / might</span><span class="modal-desc">Возможность в определённой ситуации</span></div>
+    <div class="modal-ex">It might be cold today, so bring an extra jumper.</div>
+    <div class="modal-row"><span class="modal-tag">could / might / would + have + V3</span><span class="modal-desc">Возможное, но не произошедшее действие в прошлом</span></div>
+    <div class="modal-ex">I could have lent you money, but I hadn't been paid yet.</div>
+  </div>
+
+  <div class="summary-section">
+    <h3>🔷 Способность / Неспособность</h3>
+    <div class="modal-row"><span class="modal-tag">can</span><span class="modal-desc">Способность в настоящем/будущем</span></div>
+    <div class="modal-row"><span class="modal-tag">could</span><span class="modal-desc">Способность в прошлом</span></div>
+    <div class="modal-ex">She could work longer hours when she was younger.</div>
+    <div class="modal-row"><span class="modal-tag">couldn't / wasn't able to</span><span class="modal-desc">Неспособность в прошлом</span></div>
+    <div class="modal-ex">Daniel couldn't swim when he was three.</div>
+  </div>
+
+  <div class="summary-section">
+    <h3>🔮 Логические заключения</h3>
+    <div class="modal-row"><span class="modal-tag">must</span><span class="modal-desc">Полная уверенность (наст./прошл.)</span></div>
+    <div class="modal-ex">He must be very upset. / He must have done something wrong.</div>
+    <div class="modal-row"><span class="modal-tag">may / might / could</span><span class="modal-desc">Вероятность (возможно так)</span></div>
+    <div class="modal-ex">There's traffic, so John might be late.</div>
+    <div class="modal-row"><span class="modal-tag">can't / couldn't</span><span class="modal-desc">Невозможность (уверен, что нет)</span></div>
+    <div class="modal-ex">The TV can't be broken — it's brand new.</div>
+  </div>
+
+  <div class="summary-section">
+    <h3>💬 Критические замечания</h3>
+    <div class="modal-row"><span class="modal-tag">could / should / ought to</span><span class="modal-desc">Упрёк, критика (настоящее)</span></div>
+    <div class="modal-ex">You could at least be polite to her.</div>
+    <div class="modal-row"><span class="modal-tag">could / should + have + V3</span><span class="modal-desc">Критика о прошлом действии</span></div>
+    <div class="modal-ex">She should have apologised to them.</div>
+  </div>
+
+  <div class="summary-section">
+    <h3>🤝 Предложения</h3>
+    <div class="modal-row"><span class="modal-tag">can / could / shall</span><span class="modal-desc">Предложить помощь или вариант</span></div>
+    <div class="modal-ex">Can I bring you something else? / Shall I pick you up?</div>
+    <div class="modal-row"><span class="modal-tag">would</span><span class="modal-desc">Вопрос о предпочтении</span></div>
+    <div class="modal-ex">What else would you like?</div>
+  </div>
+
+  <div class="summary-section">
+    <h3>💡 Совет</h3>
+    <div class="modal-row"><span class="modal-tag">should / ought to</span><span class="modal-desc">Обычный совет</span></div>
+    <div class="modal-ex">She should seek the help of a professional.</div>
+    <div class="modal-row"><span class="modal-tag">shall</span><span class="modal-desc">Просьба о совете</span></div>
+    <div class="modal-ex">Shall I complain to the Principal?</div>
+  </div>
+
+  <div class="summary-section">
+    <h3>📊 Вероятность</h3>
+    <div class="modal-row"><span class="modal-tag">will</span><span class="modal-desc">100% уверенность</span></div>
+    <div class="modal-row"><span class="modal-tag">should / ought to</span><span class="modal-desc">~90% вероятность (будущее)</span></div>
+    <div class="modal-ex">They should be here soon.</div>
+  </div>
+
+  <button class="ready-btn" onclick="startTest()">✅ Я ознакомился с правилами и готов ответственно выполнить задание</button>
+</div>
+
+<!-- STAGE 1: MATCH TRANSLATION -->
+<div class="screen" id="screen-1">
+  <div class="stage-title">1️⃣ Соедини глагол с переводом</div>
+  <div class="stage-sub">Нажми на модальный глагол, затем на его значение</div>
+  <div class="match-score">Найдено: <span id="m1-found">0</span> / 12</div>
+  <div class="match-hint" id="m1-hint"></div>
+  <div class="match-grid" id="m1-grid"></div>
+</div>
+
+<!-- STAGE 2: MATCH FUNCTION -->
+<div class="screen" id="screen-2">
+  <div class="stage-title">2️⃣ Соедини глагол с функцией</div>
+  <div class="stage-sub">Нажми на модальный глагол, затем на его функцию</div>
+  <div class="match-score">Найдено: <span id="m2-found">0</span> / 10</div>
+  <div class="match-hint" id="m2-hint"></div>
+  <div class="match-grid" id="m2-grid"></div>
+</div>
+
+<!-- STAGE 3: CHOOSE MODAL -->
+<div class="screen" id="screen-3">
+  <div class="stage-title">3️⃣ Выбери правильный глагол</div>
+  <div class="stage-sub">Прочитай ситуацию и выбери подходящий модальный глагол</div>
+  <div class="mini-grammar">
+    <span class="mg-title">💡 Напоминание</span>
+    <b>must</b> — долг/обязательство от себя<br>
+    <b>have to</b> — необходимость по обстоятельствам<br>
+    <b>mustn't</b> — запрет<br>
+    <b>don't have to</b> — нет необходимости (но можно)<br>
+    <b>should</b> — совет/рекомендация<br>
+    <b>can/may</b> — разрешение
+  </div>
+  <div class="prog-wrap"><div class="prog-bar" id="prog-3" style="width:0%"></div></div>
+  <div class="q-prog" id="q-prog3">Вопрос 1 из 7</div>
+  <div class="situation-box"><div class="situation-text" id="sit3-text"></div></div>
+  <div class="options-col" id="opts3"></div>
+  <div class="explain-box" id="exp3"></div>
+  <div class="feedback-line" id="fb3"></div>
+  <button class="next-btn" id="next3" onclick="handleNext3()" disabled>Следующий →</button>
+</div>
+
+<!-- STAGE 4: LOGICAL CONCLUSIONS -->
+<div class="screen" id="screen-4">
+  <div class="stage-title">4️⃣ Логические заключения</div>
+  <div class="stage-sub">Выбери правильный глагол для логического вывода</div>
+  <div class="mini-grammar">
+    <span class="mg-title">💡 Напоминание</span>
+    <b>must</b> — уверен, что это так (полная уверенность)<br>
+    <b>might / may / could</b> — возможно, что это так<br>
+    <b>can't / couldn't</b> — уверен, что это невозможно<br>
+    <b>must have + V3</b> — уверен, что это было в прошлом<br>
+    <b>can't have + V3</b> — невозможно, что это было
+  </div>
+  <div class="prog-wrap"><div class="prog-bar" id="prog-4" style="width:0%"></div></div>
+  <div class="q-prog" id="q-prog4">Вопрос 1 из 6</div>
+  <div class="situation-box">
+    <div class="situation-text" id="sit4-text"></div>
+    <div class="situation-en" id="sit4-en"></div>
+  </div>
+  <div class="options-col" id="opts4"></div>
+  <div class="explain-box" id="exp4"></div>
+  <div class="feedback-line" id="fb4"></div>
+  <button class="next-btn" id="next4" onclick="handleNext4()" disabled>Следующий →</button>
+</div>
+
+<!-- STAGE 5: CRITICISM & ADVICE -->
+<div class="screen" id="screen-5">
+  <div class="stage-title">5️⃣ Критика и советы</div>
+  <div class="stage-sub">Выбери правильный вариант</div>
+  <div class="mini-grammar">
+    <span class="mg-title">💡 Напоминание</span>
+    <b>should / ought to + инфинитив</b> — совет или мягкая критика (сейчас/будущее)<br>
+    <b>should / ought to + have + V3</b> — критика за прошлое (но не сделал)<br>
+    <b>could + инфинитив</b> — мягкий упрёк (сейчас)<br>
+    <b>could + have + V3</b> — упрёк за прошлое
+  </div>
+  <div class="prog-wrap"><div class="prog-bar" id="prog-5" style="width:0%"></div></div>
+  <div class="q-prog" id="q-prog5">Вопрос 1 из 6</div>
+  <div class="situation-box">
+    <div class="situation-text" id="sit5-text"></div>
+    <div class="situation-en" id="sit5-en"></div>
+  </div>
+  <div class="options-col" id="opts5"></div>
+  <div class="explain-box" id="exp5"></div>
+  <div class="feedback-line" id="fb5"></div>
+  <button class="next-btn" id="next5" onclick="handleNext5()" disabled>Следующий →</button>
+</div>
+
+<!-- STAGE 6: SUGGESTIONS -->
+<div class="screen" id="screen-6">
+  <div class="stage-title">6️⃣ Предложения</div>
+  <div class="stage-sub">Выбери правильный глагол для предложения / вопроса о предпочтении</div>
+  <div class="mini-grammar">
+    <span class="mg-title">💡 Напоминание</span>
+    <b>Can I...?</b> — предложить помощь (неформально)<br>
+    <b>Shall I / we...?</b> — предложить сделать что-то<br>
+    <b>Would you like...?</b> — вопрос о предпочтении<br>
+    <b>Could / Can we...?</b> — предложить вариант
+  </div>
+  <div class="prog-wrap"><div class="prog-bar" id="prog-6" style="width:0%"></div></div>
+  <div class="q-prog" id="q-prog6">Вопрос 1 из 5</div>
+  <div class="situation-box"><div class="situation-text" id="sit6-text"></div></div>
+  <div class="options-col" id="opts6"></div>
+  <div class="explain-box" id="exp6"></div>
+  <div class="feedback-line" id="fb6"></div>
+  <button class="next-btn" id="next6" onclick="handleNext6()" disabled>Следующий →</button>
+</div>
+
+<!-- STAGE 7: FIX MISTAKE -->
+<div class="screen" id="screen-7">
+  <div class="stage-title">7️⃣ Исправь ошибку</div>
+  <div class="stage-sub">В каждом предложении неправильно использован модальный глагол. Напиши исправленный вариант целиком.</div>
+  <div class="prog-wrap"><div class="prog-bar" id="prog-7" style="width:0%"></div></div>
+  <div class="q-prog" id="q-prog7">Предложение 1 из 7</div>
+  <div class="situation-box">
+    <div class="situation-text" id="sit7-wrong" style="color:#E24B4A;font-weight:600;"></div>
+    <div class="situation-en" id="sit7-ru"></div>
+  </div>
+  <button class="hint-toggle" id="hint-toggle7" onclick="toggleHint7()"><span class="arr">▶</span> Подсказка</button>
+  <div class="hint-box" id="hint-box7"></div>
+  <textarea class="type-input" id="type-input7" rows="2" placeholder="Напиши исправленное предложение..." autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+  <div class="correct-ans" id="correct-ans7"></div>
+  <div class="feedback-line" id="fb7"></div>
+  <button class="next-btn" id="next7" onclick="handleNext7()" disabled>Проверить</button>
+</div>
+
+<!-- STAGE 8: TRANSLATE -->
+<div class="screen" id="screen-8">
+  <div class="stage-title">8️⃣ Переведи на английский</div>
+  <div class="stage-sub">Прочитай предложение по-русски и напиши его по-английски с правильным модальным глаголом</div>
+  <div class="prog-wrap"><div class="prog-bar" id="prog-8" style="width:0%"></div></div>
+  <div class="q-prog" id="q-prog8">Предложение 1 из 6</div>
+  <div class="situation-box"><div class="situation-text" id="sit8-ru" style="font-weight:600;"></div></div>
+  <button class="hint-toggle" id="hint-toggle8" onclick="toggleHint8()"><span class="arr">▶</span> Подсказка</button>
+  <div class="hint-box" id="hint-box8"></div>
+  <textarea class="type-input" id="type-input8" rows="2" placeholder="Напиши по-английски..." autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+  <div class="correct-ans" id="correct-ans8"></div>
+  <div class="feedback-line" id="fb8"></div>
+  <button class="next-btn" id="next8" onclick="handleNext8()" disabled>Проверить</button>
+</div>
+
+<!-- FINISH -->
+<div class="screen" id="screen-finish">
+  <div class="fin-top">
+    <div class="fin-emoji" id="fin-emoji"></div>
+    <div class="fin-title" id="fin-title"></div>
+    <div class="fin-sub" id="fin-sub"></div>
+  </div>
+  <div class="fin-stats">
+    <div class="fin-stat"><div class="fin-stat-n g" id="fs-c">0</div><div class="fin-stat-l">верных</div></div>
+    <div class="fin-stat"><div class="fin-stat-n r" id="fs-w">0</div><div class="fin-stat-l">ошибок</div></div>
+    <div class="fin-stat"><div class="fin-stat-n p" id="fs-t">0</div><div class="fin-stat-l">заданий</div></div>
+  </div>
+  <div class="history-title">📊 История попыток</div>
+  <div class="history-list" id="history-list"></div>
+  <button class="restart-btn" onclick="restartGame()">Попробовать снова</button>
+</div>
+
+<script>
+const STORAGE_KEY = 'modal_verbs_full_test';
+let totalErrors=0, totalCorrect=0;
+function shuffle(arr){return[...arr].sort(()=>Math.random()-.5);}
+function normalize(str){return str.toLowerCase().replace(/[.,!?'"]/g,'').replace(/\s+/g,' ').trim();}
+
+// ── DATA ──
+const m1Words = [
+  {en:'must',          ru:'должен / обязан'},
+  {en:'have to',       ru:'вынужден / приходится'},
+  {en:'should',        ru:'следует / стоит'},
+  {en:'ought to',      ru:'следует (более формально)'},
+  {en:'can',           ru:'могу / умею / можно'},
+  {en:'could',         ru:'мог / умел / возможно'},
+  {en:'may',           ru:'можно / возможно (формально)'},
+  {en:'might',         ru:'возможно / мог бы'},
+  {en:'mustn\'t',      ru:'нельзя / запрещено'},
+  {en:'don\'t have to',ru:'нет необходимости'},
+  {en:'shall',         ru:'может быть / предложение'},
+  {en:'would',         ru:'хотел бы / предпочёл бы'},
+];
+
+const m2Words = [
+  {en:'must',            ru:'обязательство'},
+  {en:'mustn\'t',        ru:'запрет'},
+  {en:'don\'t have to',  ru:'отсутствие необходимости'},
+  {en:'can / may',       ru:'разрешение'},
+  {en:'should',          ru:'совет / рекомендация'},
+  {en:'might / could',   ru:'возможность'},
+  {en:'can',             ru:'способность'},
+  {en:'must (вывод)',    ru:'логическая уверенность'},
+  {en:'can\'t (вывод)',  ru:'логическое отрицание'},
+  {en:'shall / would',   ru:'предложение'},
+];
+
+const s3Items = [
+  {text:'Врач сказал, что тебе нельзя есть сахар. (правило врача)', opts:['must not eat','don\'t have to eat','should not eat'], correct:0, explain:'mustn\'t/must not — запрет по правилу. don\'t have to = нет необходимости, но можно.'},
+  {text:'Тебе не обязательно приходить на встречу — она необязательная.', opts:['mustn\'t come','don\'t have to come','can\'t come'], correct:1, explain:'don\'t have to = нет необходимости. mustn\'t = запрет.'},
+  {text:'Правила музея гласят: в этом зале нельзя фотографировать.', opts:['shouldn\'t photograph','don\'t have to photograph','mustn\'t photograph'], correct:2, explain:'mustn\'t — запрет по правилам.'},
+  {text:'По правилам закона водители обязаны пристёгиваться.', opts:['must wear','should wear','might wear'], correct:0, explain:'must — строгое обязательство, закон.'},
+  {text:'Тебе стоит больше спать — ты выглядишь уставшим.', opts:['must sleep','should sleep','have to sleep'], correct:1, explain:'should — совет, рекомендация.'},
+  {text:'Могу я взять твой карандаш? (неформально)', opts:['May I borrow','Shall I borrow','Must I borrow'], correct:0, explain:'Can/May I...? — просьба о разрешении. May — чуть формальнее.'},
+  {text:'Вчера по обстоятельствам мне пришлось остаться допоздна.', opts:['I must stay','I had to stay','I should stay'], correct:1, explain:'had to — необходимость в прошлом по обстоятельствам.'},
+];
+
+const s4Items = [
+  {text:'Том улыбается и выглядит очень счастливым.', en:'He ___ be very happy.', opts:['must','can\'t','might not'], correct:0, explain:'must — полная уверенность в настоящем.'},
+  {text:'Ключи нигде нет. Возможно, ты оставил их на работе.', en:'You ___ have left them at work.', opts:['must','might','can\'t'], correct:1, explain:'might have + V3 — возможность в прошлом.'},
+  {text:'Это новый телефон. Он не может быть сломан.', en:'It ___ be broken — it\'s brand new.', opts:['must','might','can\'t'], correct:2, explain:'can\'t — уверенность, что это невозможно.'},
+  {text:'Судя по следам на снегу, здесь точно был медведь.', en:'There ___ have been a bear here.', opts:['must','might','can\'t'], correct:0, explain:'must have + V3 — уверенный вывод о прошлом.'},
+  {text:'Она очень вежливый человек. Она не могла сказать такое.', en:'She ___ have said something so rude.', opts:['must','could','couldn\'t'], correct:2, explain:'couldn\'t have + V3 — невозможно, что это было в прошлом.'},
+  {text:'Много пробок сегодня. Джон, возможно, опоздает.', en:'John ___ be late.', opts:['must','might','can\'t'], correct:1, explain:'might — вероятность (возможно, но не уверен).'},
+];
+
+const s5Items = [
+  {text:'Твой друг не позвонил тебе, хотя обещал. Ты недоволен.', en:'You ___ have called me!', opts:['could','should','must'], correct:1, explain:'should have + V3 — упрёк: должен был, но не сделал.'},
+  {text:'Она потратила все деньги родителей. Это неправильно.', en:'She ___ stop wasting her parents\' money.', opts:['ought to','must','might'], correct:0, explain:'ought to — мягкая критика, совет изменить поведение.'},
+  {text:'Коллега груб с тобой. Ты делаешь мягкое замечание.', en:'You ___ at least be polite to her.', opts:['could','must','shall'], correct:0, explain:'could — мягкий упрёк в настоящем.'},
+  {text:'Друг болен. Ты советуешь ему обратиться к врачу.', en:'You ___ see a doctor.', opts:['must','should','shall'], correct:1, explain:'should — обычный совет.'},
+  {text:'Они не дождались тебя, хотя могли. Ты разочарован.', en:'They ___ have waited for us.', opts:['could','should','must'], correct:0, explain:'could have + V3 — упрёк: могли, но не сделали.'},
+  {text:'Тебе нужен совет: стоит ли жаловаться директору?', en:'___ I complain to the Principal?', opts:['Shall','Should','Must'], correct:0, explain:'Shall I...? — просьба о совете.'},
+];
+
+const s6Items = [
+  {text:'Ты официант. Клиент заканчивает есть. Предложи принести ещё что-нибудь.', opts:['Can I bring you something else?','Shall you bring something?','Would I bring you more?'], correct:0, explain:'Can I...? — предложение помощи.'},
+  {text:'Ты хочешь спросить друга о его предпочтениях на вечер.', opts:['What else could I like?','What else would you like?','What else must you like?'], correct:1, explain:'Would you like...? — вопрос о предпочтении.'},
+  {text:'Ты предлагаешь подвезти коллегу с работы.', opts:['Must I pick you up from work?','Shall I pick you up from work?','Will I pick you up from work?'], correct:1, explain:'Shall I...? — предложение сделать что-то для другого.'},
+  {text:'Ты предлагаешь другу два варианта на вечер.', opts:['We must rent a DVD or go on a picnic.','We could rent a DVD or go on a picnic.','We shall rent a DVD or go on a picnic.'], correct:1, explain:'could — мягкое предложение варианта.'},
+  {text:'Гость просит разрешения открыть окно (официально).', opts:['Can I open the window?','May I open the window?','Shall I open the window?'], correct:1, explain:'May I...? — формальная просьба о разрешении.'},
+];
+
+const s7Items = [
+  {wrong:'You mustn\'t bring your ID — it\'s optional.',  correct:'You don\'t have to bring your ID — it\'s optional.', ru:'Тебе не обязательно брать ID — это необязательно.', hint:'mustn\'t = запрет. Если нет необходимости — нужно don\'t have to'},
+  {wrong:'She must have apologised — she\'s very kind.',   correct:'She can\'t have apologised — she\'s very kind.', ru:'(Нет) Она не могла не извиниться — она очень добрая. / Она точно не могла сказать это.', hint:'must have = уверен что было. can\'t have = уверен что невозможно'},
+  {wrong:'I must see a doctor — the appointment is optional.', correct:'I don\'t have to see a doctor — the appointment is optional.', ru:'Мне необязательно идти к врачу — визит необязателен.', hint:'must = крайняя необходимость. Здесь нет необходимости → don\'t have to'},
+  {wrong:'You must be more patient — it\'s just a suggestion.', correct:'You should be more patient — it\'s just a suggestion.', ru:'Тебе стоит быть терпеливее — это просто совет.', hint:'must = строгое обязательство. Для совета — should'},
+  {wrong:'Can I complain to the manager? (прошу совета)',  correct:'Shall I complain to the manager?', ru:'Стоит ли мне пожаловаться менеджеру?', hint:'Can I = просьба о разрешении. Для просьбы о совете — Shall I'},
+  {wrong:'She could seek help of a professional — she absolutely must.', correct:'She should seek the help of a professional.', ru:'Ей следует обратиться за помощью к специалисту.', hint:'Для совета/рекомендации используй should или ought to'},
+  {wrong:'They didn\'t must go shopping — it wasn\'t necessary.', correct:'They didn\'t have to go shopping — it wasn\'t necessary.', ru:'Им не нужно было идти за покупками.', hint:'must не имеет формы прошедшего времени с didn\'t. Прошлое отсутствие необходимости → didn\'t have to'},
+];
+
+const s8Items = [
+  {ru:'Возможно, он опоздает — много пробок.', correct:'He might be late — there\'s a lot of traffic.', hint:'Возможность → might/may + инфинитив'},
+  {ru:'Тебе не нужно было приходить так рано.', correct:'You didn\'t have to come so early.', hint:'Отсутствие необходимости в прошлом → didn\'t have to'},
+  {ru:'Она не могла этого сказать — она очень вежливая.', correct:'She couldn\'t have said that — she is very polite.', hint:'Невозможность в прошлом → couldn\'t have + V3'},
+  {ru:'Ты должен был позвонить мне вчера! (упрёк)', correct:'You should have called me yesterday!', hint:'Упрёк за прошлое → should have + V3'},
+  {ru:'Могу я взять твой словарь? (неформально)', correct:'Can I borrow your dictionary?', hint:'Просьба о разрешении (неформально) → Can I...?'},
+  {ru:'Он точно устал — он работал весь день.', correct:'He must be tired — he has been working all day.', hint:'Уверенный вывод → must + инфинитив'},
+];
+
+// MATCH COLORS
+const MC = ['#E6F1FB:#185FA5','#E1F5EE:#0F6E56','#FAEEDA:#854F0B','#F5F3FF:#4C1D95','#EAF3DE:#3B6D11','#FAECE7:#993C1D','#FEF3C7:#92400E','#FCE7F3:#9D174D','#ECFDF5:#065F46','#EFF6FF:#1D4ED8','#FDF4FF:#7E22CE','#FFF1F2:#9F1239'];
+
+// EDITOR
+let editorOpen=false;
+function toggleEditor(){editorOpen=!editorOpen;document.getElementById('editor-panel').classList.toggle('show',editorOpen);}
+function editorGo(n){editorOpen=false;document.getElementById('editor-panel').classList.remove('show');goToScreen(n);}
+
+function startTest(){goToScreen(1);}
+function restartGame(){totalErrors=0;totalCorrect=0;goToScreen(0);}
+
+function goToScreen(n){
+  if(n===0)showScreen(0);
+  else if(n===1){showScreen(1);initMatch1();}
+  else if(n===2){showScreen(2);initMatch2();}
+  else if(n===3){showScreen(3);initS3();}
+  else if(n===4){showScreen(4);initS4();}
+  else if(n===5){showScreen(5);initS5();}
+  else if(n===6){showScreen(6);initS6();}
+  else if(n===7){showScreen(7);initS7();}
+  else if(n===8){showScreen(8);initS8();}
+  else if(n==='finish')showFinish();
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));
+  document.getElementById('screen-'+(id==='finish'?'finish':id)).classList.add('show');
+  const labels={0:'Конспект',1:'Этап 1: Перевод',2:'Этап 2: Функции',3:'Этап 3: Выбор глагола',4:'Этап 4: Логические выводы',5:'Этап 5: Критика и советы',6:'Этап 6: Предложения',7:'Этап 7: Исправь ошибку',8:'Этап 8: Переведи сам',finish:'Готово!'};
+  document.getElementById('stage-label').textContent=labels[id]||'';
+  for(let i=0;i<=8;i++){
+    const el=document.getElementById('dot-'+i);
+    if(!el)continue;
+    el.className='stage-dot';
+    if(id==='finish'){el.classList.add('done');continue;}
+    const n=typeof id==='number'?id:9;
+    if(i<n)el.classList.add('done');
+    else if(i===n)el.classList.add('active');
+  }
+}
+
+// ══ MATCH HELPER ══
+function buildMatch(words,gridId,foundId,hintId,colors,onDone){
+  let selEn=null,selRu=null,matched=0,errors=0;
+  document.getElementById(foundId).textContent=0;
+  document.getElementById(hintId).textContent='';
+  const grid=document.getElementById(gridId);grid.innerHTML='';
+  const enList=shuffle(words.map(w=>w.en));
+  const ruList=shuffle(words.map(w=>w.ru));
+  for(let i=0;i<words.length;i++){
+    grid.appendChild(mkCard('en',enList[i]));
+    grid.appendChild(mkCard('ru',ruList[i]));
+  }
+  function mkCard(type,word){
+    const el=document.createElement('div');
+    el.className='match-card '+type+'-card-'+gridId;
+    el.id='mc-'+gridId+'-'+type+'-'+word.replace(/[^a-zа-яё]/gi,'_');
+    el.textContent=word;
+    el.onclick=()=>tap(type,word,el);
+    return el;
+  }
+  function tap(type,word,el){
+    if(el.classList.contains('matched'))return;
+    document.querySelectorAll('.'+type+'-card-'+gridId).forEach(c=>c.classList.remove('sel'));
+    if(type==='en'){if(selEn===word){selEn=null;setH('');return;}selEn=word;}
+    else{if(selRu===word){selRu=null;setH('');return;}selRu=word;}
+    el.classList.add('sel');
+    if(type==='en'&&!selRu)setH('Теперь выбери перевод');
+    if(type==='ru'&&!selEn)setH('Теперь выбери английское слово');
+    if(selEn&&selRu)check();
+  }
+  function setH(t){document.getElementById(hintId).textContent=t;}
+  function check(){
+    const pair=words.find(w=>w.en===selEn);
+    const ok=pair&&pair.ru===selRu;
+    const enEl=document.getElementById('mc-'+gridId+'-en-'+selEn.replace(/[^a-zа-яё]/gi,'_'));
+    const ruEl=document.getElementById('mc-'+gridId+'-ru-'+selRu.replace(/[^a-zа-яё]/gi,'_'));
+    if(ok){
+      matched++;document.getElementById(foundId).textContent=matched;
+      const col=colors[(matched-1)%colors.length].split(':');
+      [enEl,ruEl].forEach(el=>{el.style.background=col[0];el.style.borderColor=col[1];el.style.color=col[1];el.classList.remove('sel');el.classList.add('matched');});
+      setH('');
+      if(matched===words.length){totalErrors+=errors;setTimeout(onDone,600);}
+    }else{
+      errors++;totalErrors++;
+      [enEl,ruEl].forEach(el=>{el.classList.remove('sel');el.classList.add('wrong');setTimeout(()=>el.classList.remove('wrong'),400);});
+      setH('Не совпадает — попробуй ещё!');
+    }
+    selEn=null;selRu=null;
+  }
+}
+
+function initMatch1(){buildMatch(m1Words,'m1-grid','m1-found','m1-hint',MC,()=>goToScreen(2));}
+function initMatch2(){buildMatch(m2Words,'m2-grid','m2-found','m2-hint',MC,()=>goToScreen(3));}
+
+// ══ CHOICE STAGE HELPER ══
+function buildChoiceStage(items,pfx,onDone){
+  let idx=0,answered=false,errors=0;
+  function load(){
+    const item=items[idx];answered=false;
+    document.getElementById('q-prog'+pfx).textContent=`Вопрос ${idx+1} из ${items.length}`;
+    document.getElementById('prog-'+pfx).style.width=(idx/items.length*100)+'%';
+    document.getElementById('sit'+pfx+'-text').textContent=item.text;
+    if(item.en)document.getElementById('sit'+pfx+'-en').textContent=item.en;
+    document.getElementById('fb'+pfx).textContent='';document.getElementById('fb'+pfx).className='feedback-line';
+    document.getElementById('exp'+pfx).style.display='none';
+    document.getElementById('next'+pfx).disabled=true;
+    const opts=document.getElementById('opts'+pfx);opts.innerHTML='';
+    shuffle(item.opts.map((o,i)=>({text:o,idx:i}))).forEach(({text,idx:oi})=>{
+      const btn=document.createElement('button');btn.className='opt-btn';btn.textContent=text;
+      btn.onclick=()=>check(oi===item.correct,btn,item);
+      opts.appendChild(btn);
+    });
+  }
+  function check(ok,btn,item){
+    if(answered)return;answered=true;
+    document.querySelectorAll('#opts'+pfx+' .opt-btn').forEach(b=>{
+      if(b.textContent===item.opts[item.correct])b.classList.add(ok&&b===btn?'correct':'reveal');
+      else if(b===btn&&!ok)b.classList.add('wrong');
+      else b.classList.add('dim');
+    });
+    const fb=document.getElementById('fb'+pfx);
+    const exp=document.getElementById('exp'+pfx);
+    if(ok){fb.textContent='✓ Верно!';fb.className='feedback-line ok';totalCorrect++;}
+    else{fb.textContent='✗ Неверно';fb.className='feedback-line err';errors++;totalErrors++;}
+    exp.textContent=item.explain;exp.style.display='block';
+    const next=document.getElementById('next'+pfx);
+    next.textContent=idx+1>=items.length?'Следующий этап →':'Следующий →';next.disabled=false;
+  }
+  document.getElementById('next'+pfx).onclick=()=>{idx++;if(idx>=items.length)onDone();else load();};
+  load();
+}
+
+function initS3(){buildChoiceStage(s3Items,'3',()=>goToScreen(4));}
+function initS4(){buildChoiceStage(s4Items,'4',()=>goToScreen(5));}
+function initS5(){buildChoiceStage(s5Items,'5',()=>goToScreen(6));}
+function initS6(){buildChoiceStage(s6Items,'6',()=>goToScreen(7));}
+function handleNext3(){}function handleNext4(){}function handleNext5(){}function handleNext6(){}
+
+// ══ STAGE 7: FIX ══
+let s7Idx=0,s7Checked=false;
+function initS7(){s7Idx=0;s7Checked=false;loadFix7();}
+function loadFix7(){
+  const item=s7Items[s7Idx];s7Checked=false;
+  document.getElementById('sit7-wrong').textContent=item.wrong;
+  document.getElementById('sit7-ru').textContent=item.ru;
+  document.getElementById('q-prog7').textContent=`Предложение ${s7Idx+1} из ${s7Items.length}`;
+  document.getElementById('prog-7').style.width=(s7Idx/s7Items.length*100)+'%';
+  document.getElementById('fb7').textContent='';document.getElementById('fb7').className='feedback-line';
+  document.getElementById('correct-ans7').style.display='none';
+  document.getElementById('next7').textContent='Проверить';document.getElementById('next7').disabled=true;
+  document.getElementById('hint-box7').textContent=item.hint;
+  document.getElementById('hint-box7').classList.remove('show');
+  const t=document.getElementById('hint-toggle7');t.classList.remove('open');t.innerHTML='<span class="arr">▶</span> Подсказка';
+  const inp=document.getElementById('type-input7');inp.value='';inp.className='type-input';inp.disabled=false;
+}
+function toggleHint7(){
+  const b=document.getElementById('hint-box7');const t=document.getElementById('hint-toggle7');
+  const o=b.classList.contains('show');b.classList.toggle('show');t.classList.toggle('open');
+  t.innerHTML=o?'<span class="arr">▶</span> Подсказка':'<span class="arr">▶</span> Скрыть';
+}
+document.getElementById('type-input7').addEventListener('input',function(){if(!s7Checked)document.getElementById('next7').disabled=this.value.trim().length===0;});
+document.getElementById('type-input7').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();handleNext7();}});
+function handleNext7(){if(!s7Checked)checkFix7();else{s7Idx++;if(s7Idx>=s7Items.length)goToScreen(8);else loadFix7();}}
+function checkFix7(){
+  const inp=document.getElementById('type-input7');
+  const ans=normalize(inp.value);const cor=normalize(s7Items[s7Idx].correct);
+  s7Checked=true;inp.disabled=true;
+  const fb=document.getElementById('fb7');const ab=document.getElementById('correct-ans7');const nx=document.getElementById('next7');
+  if(ans===cor){inp.classList.add('correct');fb.textContent='✓ Верно!';fb.className='feedback-line ok';totalCorrect++;}
+  else{inp.classList.add('wrong');fb.textContent='✗ Не совсем';fb.className='feedback-line err';ab.textContent='Правильно: '+s7Items[s7Idx].correct;ab.style.display='block';totalErrors++;}
+  nx.textContent=s7Idx+1>=s7Items.length?'Следующий этап →':'Следующее →';nx.disabled=false;
+}
+
+// ══ STAGE 8: TRANSLATE ══
+let s8Idx=0,s8Checked=false;
+function initS8(){s8Idx=0;s8Checked=false;loadTrans8();}
+function loadTrans8(){
+  const item=s8Items[s8Idx];s8Checked=false;
+  document.getElementById('sit8-ru').textContent=item.ru;
+  document.getElementById('q-prog8').textContent=`Предложение ${s8Idx+1} из ${s8Items.length}`;
+  document.getElementById('prog-8').style.width=(s8Idx/s8Items.length*100)+'%';
+  document.getElementById('fb8').textContent='';document.getElementById('fb8').className='feedback-line';
+  document.getElementById('correct-ans8').style.display='none';
+  document.getElementById('next8').textContent='Проверить';document.getElementById('next8').disabled=true;
+  document.getElementById('hint-box8').textContent=item.hint;
+  document.getElementById('hint-box8').classList.remove('show');
+  const t=document.getElementById('hint-toggle8');t.classList.remove('open');t.innerHTML='<span class="arr">▶</span> Подсказка';
+  const inp=document.getElementById('type-input8');inp.value='';inp.className='type-input';inp.disabled=false;
+}
+function toggleHint8(){
+  const b=document.getElementById('hint-box8');const t=document.getElementById('hint-toggle8');
+  const o=b.classList.contains('show');b.classList.toggle('show');t.classList.toggle('open');
+  t.innerHTML=o?'<span class="arr">▶</span> Подсказка':'<span class="arr">▶</span> Скрыть';
+}
+document.getElementById('type-input8').addEventListener('input',function(){if(!s8Checked)document.getElementById('next8').disabled=this.value.trim().length===0;});
+document.getElementById('type-input8').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();handleNext8();}});
+function handleNext8(){if(!s8Checked)checkTrans8();else{s8Idx++;if(s8Idx>=s8Items.length)goToScreen('finish');else loadTrans8();}}
+function checkTrans8(){
+  const inp=document.getElementById('type-input8');
+  const ans=normalize(inp.value);const cor=normalize(s8Items[s8Idx].correct);
+  s8Checked=true;inp.disabled=true;
+  const fb=document.getElementById('fb8');const ab=document.getElementById('correct-ans8');const nx=document.getElementById('next8');
+  if(ans===cor){inp.classList.add('correct');fb.textContent='✓ Верно!';fb.className='feedback-line ok';totalCorrect++;}
+  else{inp.classList.add('wrong');fb.textContent='✗ Не совсем';fb.className='feedback-line err';ab.textContent='Правильно: '+s8Items[s8Idx].correct;ab.style.display='block';totalErrors++;}
+  nx.textContent=s8Idx+1>=s8Items.length?'Завершить 🎉':'Следующее →';nx.disabled=false;
+}
+
+// HISTORY & FINISH
+function loadHistory(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');}catch{return[];}}
+function saveHistory(h){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(h));}catch{}}
+function addAttempt(errors){const h=loadHistory();h.unshift({errors,date:new Date().toLocaleDateString('ru-RU')});if(h.length>10)h.pop();saveHistory(h);return h;}
+function renderHistory(history){
+  const list=document.getElementById('history-list');list.innerHTML='';
+  if(!history.length){list.innerHTML='<div class="history-empty">Это первая попытка!</div>';return;}
+  history.forEach((item,i)=>{
+    const div=document.createElement('div');div.className='history-item';
+    const ec=item.errors===0?'zero':'some';
+    const et=item.errors===0?'Без ошибок ✓':item.errors+(item.errors===1?' ошибка':item.errors<5?' ошибки':' ошибок');
+    div.innerHTML=`<span class="h-attempt">Попытка ${history.length-i}</span><span class="h-errors ${ec}">${et}</span><span class="h-date">${item.date}</span>`;
+    list.appendChild(div);
+  });
+}
+
+function showFinish(){
+  const total=s7Items.length+s8Items.length+s3Items.length+s4Items.length+s5Items.length+s6Items.length;
+  const pct=Math.round(totalCorrect/total*100);
+  const emoji=totalErrors===0?'🏆':pct>=85?'🎉':pct>=60?'💪':'📚';
+  const title=totalErrors===0?'Идеально!':pct>=85?'Отлично!':pct>=60?'Хорошая работа!':'Повтори правила и попробуй снова!';
+  document.getElementById('fin-emoji').textContent=emoji;
+  document.getElementById('fin-title').textContent=title;
+  document.getElementById('fin-sub').innerHTML=`Правильных ответов: <strong>${totalCorrect} из ${total}</strong> (${pct}%)`;
+  document.getElementById('fs-c').textContent=totalCorrect;
+  document.getElementById('fs-w').textContent=totalErrors;
+  document.getElementById('fs-t').textContent=total;
+  const history=addAttempt(totalErrors);renderHistory(history);
+  showScreen('finish');
+}
+
+showScreen(0);
+</script>
+</body>
+</html>
