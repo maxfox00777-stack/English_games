@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Тест по английскому языку | 4 класс (A0-A1)</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'Comic Sans MS', 'Arial Rounded', system-ui, sans-serif;
+      background: linear-gradient(145deg, #f9f3e8 0%, #fde9e0 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1.5rem;
+      margin: 0;
+    }
+
+    .quiz-container {
+      max-width: 750px;
+      width: 100%;
+      background: rgba(255, 250, 245, 0.9);
+      backdrop-filter: blur(16px);
+      background: #fffef7;
+      border-radius: 3.5rem;
+      box-shadow: 0 30px 45px rgba(160, 100, 60, 0.2), 0 12px 20px rgba(0, 0, 0, 0.08);
+      padding: 2.2rem 2rem 2.5rem;
+      border: 2px solid #ffe0c0;
+      transition: all 0.2s ease;
+    }
+
+    h1 {
+      font-size: 2.3rem;
+      font-weight: 700;
+      color: #b45f2a;
+      text-align: center;
+      margin-bottom: 0.3rem;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+    h1 span {
+      background: #ffdbb5;
+      padding: 0.2rem 1rem;
+      border-radius: 3rem;
+      font-size: 1.8rem;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #9b7b5c;
+      font-size: 1.2rem;
+      margin-bottom: 2rem;
+      border-bottom: 3px dotted #f7cf9f;
+      padding-bottom: 0.8rem;
+      font-weight: 500;
+    }
+
+    .question-card {
+      background: #ffffff;
+      border: 2px solid #fad7b3;
+      border-radius: 2.2rem;
+      padding: 1.5rem 1.5rem 1.2rem;
+      margin-bottom: 1.8rem;
+      box-shadow: 0 8px 18px rgba(190, 120, 40, 0.08);
+      transition: 0.2s;
+    }
+
+    .question-text {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #4e3b2c;
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: baseline;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+    .q-num {
+      background: #fda47e;
+      color: white;
+      border-radius: 50%;
+      width: 2rem;
+      height: 2rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-right: 0.3rem;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 8px rgba(253, 130, 70, 0.4);
+    }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      margin-top: 0.6rem;
+    }
+
+    .option-item {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      background: #fef5e9;
+      padding: 0.7rem 1.2rem;
+      border-radius: 1.8rem;
+      border: 1.5px solid #fde0c2;
+      transition: background 0.2s, border-color 0.2s;
+      cursor: pointer;
+      font-size: 1.05rem;
+      color: #3b2c1e;
+    }
+    .option-item:hover {
+      background: #ffe5cd;
+      border-color: #f8b77e;
+    }
+
+    input[type="radio"] {
+      appearance: none;
+      width: 1.3rem;
+      height: 1.3rem;
+      border: 2px solid #cc9f6b;
+      border-radius: 50%;
+      margin: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.15s;
+      cursor: pointer;
+      background: white;
+    }
+    input[type="radio"]:checked {
+      border-color: #e07b3a;
+      background: #fde3cf;
+      box-shadow: inset 0 0 0 5px #c45a2c;
+    }
+
+    .btn-group {
+      display: flex;
+      justify-content: center;
+      gap: 1.2rem;
+      flex-wrap: wrap;
+      margin: 2rem 0 1.5rem;
+    }
+
+    .btn {
+      border: none;
+      background: #ffb26e;
+      color: #442c1c;
+      font-weight: 700;
+      font-size: 1.2rem;
+      padding: 0.9rem 2rem;
+      border-radius: 3rem;
+      cursor: pointer;
+      background: #feae6d;
+      box-shadow: 0 7px 0 #cc7b3a, 0 8px 16px rgba(200, 100, 20, 0.25);
+      transition: all 0.1s ease;
+      letter-spacing: 0.5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      border: 2px solid #fff0dd;
+    }
+    .btn:active {
+      transform: translateY(4px);
+      box-shadow: 0 3px 0 #b45c2a, 0 6px 12px rgba(180, 80, 10, 0.3);
+      background: #fd9e4b;
+    }
+
+    .btn-secondary {
+      background: #fde7d4;
+      box-shadow: 0 7px 0 #c9a27c, 0 8px 16px rgba(140, 80, 20, 0.2);
+      border-color: #f7d7bb;
+      color: #4f3a27;
+    }
+
+    .result-area {
+      margin-top: 1.3rem;
+      background: #fcf3e6;
+      border-radius: 2rem;
+      padding: 1.2rem 1.5rem;
+      font-weight: 600;
+      font-size: 1.3rem;
+      text-align: center;
+      color: #5c3f28;
+      border: 2px dashed #f3b57c;
+      background: #fff6ec;
+    }
+
+    .correct-highlight {
+      background: #d2f0d2;
+      border-color: #7cb87c;
+    }
+
+    @media (max-width: 500px) {
+      .quiz-container {
+        padding: 1.5rem 1rem;
+      }
+      .question-text {
+        font-size: 1.1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="quiz-container">
+  <h1>
+    📚🐼 <span>English test</span>
+  </h1>
+  <div class="subtitle">4 класс · picture, country, where, there is/are</div>
+
+  <form id="quizForm">
+    <!-- Вопросы формируются динамически через JavaScript для чистоты, но можно и напрямую.
+         Я размещу вопросы статично, а JS проверит ответы. -->
+  </form>
+
+  <div class="btn-group">
+    <button type="button" class="btn" id="checkBtn">✅ Проверить</button>
+    <button type="button" class="btn btn-secondary" id="resetBtn">🔄 Сбросить</button>
+  </div>
+  <div class="result-area" id="resultDisplay">📌 Твой результат появится здесь</div>
+</div>
+
+<script>
+  const questionsData = [
+    {
+      question: "Как переводится слово <b>«picture»</b>?",
+      options: ["Страна", "Картинка", "Где", "Сейчас"],
+      correct: 1,
+      hint: "picture — картинка"
+    },
+    {
+      question: "Как переводится <b>«country»</b>?",
+      options: ["Город", "Картинка", "Страна", "Откуда"],
+      correct: 2,
+      hint: "country — страна"
+    },
+    {
+      question: "Что означает слово <b>«where»</b>?",
+      options: ["Сейчас", "Кто", "Где / откуда", "Почему"],
+      correct: 2,
+      hint: "where — где, откуда"
+    },
+    {
+      question: "Выбери верный перевод: <b>«now»</b>",
+      options: ["Никогда", "Сейчас", "Потом", "Сегодня"],
+      correct: 1,
+      hint: "now — сейчас"
+    },
+    {
+      question: "Откуда медведь? <b>Bear is ___ Russia.</b>",
+      options: ["at", "from", "in", "on"],
+      correct: 1,
+      hint: "Bear is from Russia."
+    },
+    {
+      question: "Панда из Китая. Выбери правильное предложение:",
+      options: [
+        "Panda is from China.",
+        "Panda are from China.",
+        "Panda from is China.",
+        "Panda China from."
+      ],
+      correct: 0,
+      hint: "Panda is from China."
+    },
+    {
+      question: "Как спросить <b>«Как тебя зовут?»</b>",
+      options: [
+        "How old are you?",
+        "Where are you from?",
+        "What is your name?",
+        "What you name?"
+      ],
+      correct: 2,
+      hint: "What is your name?"
+    },
+    {
+      question: "<b>«How old are you?»</b> означает:",
+      options: [
+        "Как дела?",
+        "Сколько тебе лет?",
+        "Откуда ты?",
+        "Как тебя зовут?"
+      ],
+      correct: 1,
+      hint: "How old are you? — Сколько тебе лет?"
+    },
+    {
+      question: "Как ответить на вопрос <b>«Where are you from?»</b> (если ты из Новосибирска)",
+      options: [
+        "I am from Novosibirsk.",
+        "I am Novosibirsk.",
+        "I from Novosibirsk.",
+        "I am from Russia Novosibirsk."
+      ],
+      correct: 0,
+      hint: "I am from Novosibirsk."
+    },
+    {
+      question: "Ты не знаешь ответ. Как сказать <b>«Я не знаю»</b>?",
+      options: [
+        "I no know.",
+        "I don’t know.",
+        "I not know.",
+        "I doesn’t know."
+      ],
+      correct: 1,
+      hint: "I don’t know"
+    },
+    {
+      question: "Посмотри на картинку (представь яблоко, груша и велосипед). <br>Что мы можем увидеть? <b>At the picture we can see...</b>",
+      options: [
+        "an apple, a pear and a bike",
+        "a apple, a pear and a car",
+        "an apple, a banana and a bike",
+        "apple, pear, bike"
+      ],
+      correct: 0,
+      hint: "At the picture we can see an apple, a pear and a bike"
+    },
+    {
+      question: "Выбери правильное предложение с <b>there are</b> (some crocodiles / India):",
+      options: [
+        "There are some crocodiles in India.",
+        "There is some crocodiles in India.",
+        "There are any crocodiles in India.",
+        "There are crocodiles some in India."
+      ],
+      correct: 0,
+      hint: "There are some crocodiles in India."
+    },
+    {
+      question: "Что означает <b>«some»</b> во фразе «There are some seals»?",
+      options: [
+        "Много",
+        "Несколько / некоторое количество",
+        "Нисколько",
+        "Один"
+      ],
+      correct: 1,
+      hint: "some — несколько, неопределённое количество"
+    },
+    {
+      question: "В Индии нет тюленей. Выбери правильное отрицание:",
+      options: [
+        "There aren’t any seals in India.",
+        "There aren’t some seals in India.",
+        "There isn’t any seals in India.",
+        "There are no seals in India. (тоже верно, но по правилу any важнее)",
+      ],
+      correct: 0,
+      hint: "There aren’t any seals in India (some → any в отрицаниях)"
+    },
+    {
+      question: "Какое слово заменяет <b>«some»</b> в отрицательных предложениях?",
+      options: ["many", "any", "a", "no (тоже возможно, но по правилу)"],
+      correct: 1,
+      hint: "В отрицаниях some меняется на any"
+    }
+  ];
+
+  const formElement = document.getElementById('quizForm');
+  const resultDisplay = document.getElementById('resultDisplay');
+  const checkBtn = document.getElementById('checkBtn');
+  const resetBtn = document.getElementById('resetBtn');
+
+  function buildQuiz() {
+    formElement.innerHTML = '';
+    questionsData.forEach((q, index) => {
+      const questionDiv = document.createElement('div');
+      questionDiv.className = 'question-card';
+      questionDiv.dataset.questionIndex = index;
+
+      const qText = document.createElement('div');
+      qText.className = 'question-text';
+      qText.innerHTML = `<span class="q-num">${index + 1}</span> ${q.question}`;
+      questionDiv.appendChild(qText);
+
+      const optionsDiv = document.createElement('div');
+      optionsDiv.className = 'options';
+
+      q.options.forEach((opt, optIndex) => {
+        const label = document.createElement('label');
+        label.className = 'option-item';
+
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = `q${index}`;
+        radio.value = optIndex;
+
+        label.appendChild(radio);
+        label.appendChild(document.createTextNode(opt));
+        optionsDiv.appendChild(label);
+      });
+
+      questionDiv.appendChild(optionsDiv);
+      formElement.appendChild(questionDiv);
+    });
+  }
+
+  function getSelectedAnswers() {
+    const answers = [];
+    for (let i = 0; i < questionsData.length; i++) {
+      const radios = document.getElementsByName(`q${i}`);
+      let selected = null;
+      for (const radio of radios) {
+        if (radio.checked) {
+          selected = parseInt(radio.value, 10);
+          break;
+        }
+      }
+      answers.push(selected);
+    }
+    return answers;
+  }
+
+  function calculateScore(answers) {
+    let correctCount = 0;
+    const details = [];
+    for (let i = 0; i < questionsData.length; i++) {
+      const isCorrect = (answers[i] === questionsData[i].correct);
+      if (isCorrect) correctCount++;
+      details.push({
+        index: i,
+        userAnswer: answers[i],
+        correctAnswer: questionsData[i].correct,
+        isCorrect: isCorrect
+      });
+    }
+    return { correctCount, details };
+  }
+
+  function highlightQuestions(details) {
+    // Убираем старую подсветку
+    document.querySelectorAll('.question-card').forEach(card => {
+      card.classList.remove('correct-highlight');
+    });
+
+    details.forEach(detail => {
+      const card = document.querySelector(`.question-card[data-question-index='${detail.index}']`);
+      if (card && detail.isCorrect) {
+        card.classList.add('correct-highlight');
+      }
+    });
+  }
+
+  function showResult(score, total, details) {
+    const percentage = Math.round((score / total) * 100);
+    let emoji = '🌟';
+    if (percentage === 100) emoji = '🏆🎉';
+    else if (percentage >= 80) emoji = '😊👍';
+    else if (percentage >= 60) emoji = '📘';
+    else emoji = '💪📚';
+
+    resultDisplay.innerHTML = `${emoji} Правильных ответов: <strong>${score} из ${total}</strong> (${percentage}%).<br>`;
+    if (score === total) {
+      resultDisplay.innerHTML += 'Великолепно! Ты знаешь все слова и правила!';
+    } else if (percentage >= 70) {
+      resultDisplay.innerHTML += 'Очень хорошо! Повтори чуть-чуть.';
+    } else {
+      resultDisplay.innerHTML += 'Просмотри ещё раз слова: picture, country, where, now, there is/are.';
+    }
+
+    highlightQuestions(details);
+  }
+
+  function checkAnswers() {
+    const userAnswers = getSelectedAnswers();
+    const unanswered = userAnswers.some(ans => ans === null);
+    if (unanswered) {
+      resultDisplay.innerHTML = '⚠️ Пожалуйста, ответь на <strong>все</strong> вопросы (выбери один вариант в каждом).';
+      // Убираем подсветку если были пропуски
+      document.querySelectorAll('.question-card').forEach(c => c.classList.remove('correct-highlight'));
+      return;
+    }
+
+    const { correctCount, details } = calculateScore(userAnswers);
+    showResult(correctCount, questionsData.length, details);
+  }
+
+  function resetQuiz() {
+    // Сброс всех radio
+    const allRadios = document.querySelectorAll('input[type="radio"]');
+    allRadios.forEach(radio => radio.checked = false);
+
+    // Убираем подсветку
+    document.querySelectorAll('.question-card').forEach(card => {
+      card.classList.remove('correct-highlight');
+    });
+
+    resultDisplay.innerHTML = '📌 Твой результат появится здесь';
+  }
+
+  // Инициализация
+  buildQuiz();
+
+  checkBtn.addEventListener('click', checkAnswers);
+  resetBtn.addEventListener('click', resetQuiz);
+
+  // Дополнительно: при выборе ответа можно убирать старую подсветку, но не обязательно
+  formElement.addEventListener('change', function(e) {
+    if (e.target.matches('input[type="radio"]')) {
+      // Можно мягко очистить индивидуальную подсветку? Оставим как есть,
+      // только результат сбрасывается при новой проверке.
+      // Ничего не делаем, чтобы не мешать.
+    }
+  });
+
+</script>
+</body>
+</html>
