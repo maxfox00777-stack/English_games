@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>English in Thailand 🇹🇭</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #D4A843;
+    --deep: #1A1207;
+    --warm: #F5EDD6;
+    --red: #C0392B;
+    --teal: #1A7A6E;
+    --bg: #FBF7EE;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--deep);
+    line-height: 1.7;
+  }
+
+  /* HERO */
+  .hero {
+    background: linear-gradient(135deg, #1A1207 0%, #2C1F0A 50%, #1A3A35 100%);
+    color: white;
+    text-align: center;
+    padding: 70px 20px 60px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url('https://images.unsplash.com/photo-1528181304800-259b08848526?w=1200&q=80') center/cover;
+    opacity: 0.18;
+  }
+  .hero-label {
+    display: inline-block;
+    border: 1.5px solid var(--gold);
+    color: var(--gold);
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    padding: 6px 18px;
+    margin-bottom: 22px;
+    position: relative;
+  }
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(38px, 7vw, 72px);
+    font-weight: 900;
+    line-height: 1.1;
+    position: relative;
+    margin-bottom: 16px;
+  }
+  .hero h1 span { color: var(--gold); }
+  .hero p {
+    font-size: 16px;
+    opacity: 0.7;
+    position: relative;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  .hero-flag {
+    font-size: 60px;
+    display: block;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  /* LAYOUT */
+  .container { max-width: 860px; margin: 0 auto; padding: 0 24px; }
+
+  /* SECTION TITLES */
+  .section {
+    padding: 60px 0 40px;
+    border-bottom: 1px solid rgba(0,0,0,0.07);
+  }
+  .section-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--gold);
+    color: var(--deep);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    margin-bottom: 14px;
+  }
+  .section h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(26px, 4vw, 38px);
+    font-weight: 700;
+    margin-bottom: 8px;
+    line-height: 1.2;
+  }
+  .section-intro {
+    color: #666;
+    font-size: 15px;
+    margin-bottom: 32px;
+    max-width: 600px;
+  }
+
+  /* PHRASE CARDS */
+  .phrase-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+    margin-bottom: 12px;
+  }
+  .phrase-card {
+    background: white;
+    border-left: 4px solid var(--gold);
+    padding: 18px 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .phrase-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  }
+  .phrase-num {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+  .phrase-en {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--deep);
+    margin-bottom: 4px;
+  }
+  .phrase-ru {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 6px;
+  }
+  .phrase-hint {
+    font-size: 12px;
+    color: var(--teal);
+    font-style: italic;
+  }
+  .phrase-card.spicy { border-left-color: var(--red); }
+  .phrase-card.spicy .phrase-num { color: var(--red); }
+  .phrase-card.teal { border-left-color: var(--teal); }
+  .phrase-card.teal .phrase-num { color: var(--teal); }
+
+  /* SITUATION EXERCISE */
+  .exercise-box {
+    background: white;
+    border: 1.5px solid var(--gold);
+    padding: 36px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 24px rgba(212,168,67,0.1);
+  }
+  .phrase-bank {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 32px;
+    padding: 20px;
+    background: #FFF8E8;
+    border: 1px dashed var(--gold);
+  }
+  .phrase-chip {
+    background: white;
+    border: 1.5px solid var(--gold);
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .chip-letter {
+    background: var(--gold);
+    color: white;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .situation {
+    margin-bottom: 22px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid #f0e8d0;
+  }
+  .situation:last-of-type { border-bottom: none; }
+  .sit-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 10px;
+  }
+  .sit-emoji { font-size: 28px; flex-shrink: 0; }
+  .sit-num {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+  .sit-text { font-size: 15px; color: #444; margin-bottom: 8px; }
+  .sit-blank {
+    background: #FFF8E8;
+    border: 1px dashed #c8a830;
+    padding: 10px 16px;
+    font-style: italic;
+    color: #999;
+    font-size: 15px;
+    margin-top: 8px;
+    display: block;
+  }
+  .answer-key {
+    margin-top: 20px;
+    padding: 20px;
+    background: #F0FAF7;
+    border-left: 4px solid var(--teal);
+  }
+  .answer-key summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--teal);
+    font-size: 14px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .answer-key table {
+    margin-top: 14px;
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .answer-key td {
+    padding: 6px 12px;
+    font-size: 14px;
+    border-bottom: 1px solid #d0ede7;
+  }
+  .answer-key td:first-child {
+    font-weight: 700;
+    color: var(--teal);
+    width: 60px;
+  }
+
+  /* FACTS */
+  .fact-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    background: white;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    margin-bottom: 28px;
+    overflow: hidden;
+  }
+  .fact-card.reverse { direction: rtl; }
+  .fact-card.reverse > * { direction: ltr; }
+  .fact-img {
+    width: 100%;
+    height: 260px;
+    object-fit: cover;
+  }
+  .fact-body {
+    padding: 28px 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .fact-num {
+    font-size: 48px;
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    color: var(--gold);
+    opacity: 0.3;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .fact-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: var(--deep);
+  }
+  .fact-text {
+    font-size: 14px;
+    color: #555;
+    line-height: 1.7;
+  }
+  .fact-card-single {
+    background: white;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    margin-bottom: 28px;
+    overflow: hidden;
+  }
+  .fact-single-img {
+    width: 100%;
+    height: 280px;
+    object-fit: cover;
+  }
+  .fact-single-body {
+    padding: 26px 30px;
+  }
+
+  /* FOOTER */
+  .footer {
+    background: var(--deep);
+    color: white;
+    text-align: center;
+    padding: 40px 20px;
+    margin-top: 60px;
+  }
+  .footer p { opacity: 0.5; font-size: 13px; }
+  .footer .flag { font-size: 36px; margin-bottom: 12px; display: block; }
+
+  @media (max-width: 640px) {
+    .fact-card { grid-template-columns: 1fr; }
+    .fact-card.reverse { direction: ltr; }
+    .phrase-grid { grid-template-columns: 1fr; }
+    .exercise-box { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <span class="hero-flag">🇹🇭</span>
+  <div class="hero-label">English Lesson</div>
+  <h1>English in<br><span>Thailand</span></h1>
+  <p>Everything you need to speak confidently on your trip</p>
+</div>
+
+<!-- SECTION 1: BASIC PHRASES -->
+<div class="section">
+  <div class="container">
+    <div class="section-badge">📚 Part 1</div>
+    <h2>Essential Phrases</h2>
+    <p class="section-intro">The most important phrases every traveller needs. Learn these first!</p>
+    <div class="phrase-grid">
+      <div class="phrase-card">
+        <div class="phrase-num">01 · Greeting</div>
+        <div class="phrase-en">Hello! / Hi!</div>
+        <div class="phrase-ru">Привет!</div>
+      </div>
+      <div class="phrase-card">
+        <div class="phrase-num">02 · Polite</div>
+        <div class="phrase-en">Thank you very much!</div>
+        <div class="phrase-ru">Большое спасибо!</div>
+      </div>
+      <div class="phrase-card">
+        <div class="phrase-num">03 · Restaurant</div>
+        <div class="phrase-en">Can I have this, please?</div>
+        <div class="phrase-ru">Можно мне это, пожалуйста?</div>
+        <div class="phrase-hint">Point at the menu!</div>
+      </div>
+      <div class="phrase-card spicy">
+        <div class="phrase-num">04 · Very Important!</div>
+        <div class="phrase-en">Not spicy, please!</div>
+        <div class="phrase-ru">Не острое, пожалуйста!</div>
+        <div class="phrase-hint">🌶️ Thai food can be VERY hot!</div>
+      </div>
+      <div class="phrase-card">
+        <div class="phrase-num">05 · Shopping</div>
+        <div class="phrase-en">How much does it cost?</div>
+        <div class="phrase-ru">Сколько это стоит?</div>
+      </div>
+      <div class="phrase-card">
+        <div class="phrase-num">06 · Navigation</div>
+        <div class="phrase-en">Where is the hotel / beach / toilet?</div>
+        <div class="phrase-ru">Где находится...?</div>
+      </div>
+      <div class="phrase-card teal">
+        <div class="phrase-num">07 · Emergency</div>
+        <div class="phrase-en">I need help, please!</div>
+        <div class="phrase-ru">Мне нужна помощь!</div>
+      </div>
+      <div class="phrase-card">
+        <div class="phrase-num">08 · Bargaining</div>
+        <div class="phrase-en">Can you make it cheaper?</div>
+        <div class="phrase-ru">Можно подешевле?</div>
+        <div class="phrase-hint">Thais love to bargain!</div>
+      </div>
+      <div class="phrase-card">
+        <div class="phrase-num">09 · Wi-Fi</div>
+        <div class="phrase-en">Do you have Wi-Fi? What's the password?</div>
+        <div class="phrase-ru">У вас есть Wi-Fi? Какой пароль?</div>
+      </div>
+      <div class="phrase-card">
+        <div class="phrase-num">10 · Goodbye</div>
+        <div class="phrase-en">Goodbye! Have a nice day!</div>
+        <div class="phrase-ru">До свидания! Хорошего дня!</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 2: ADVANCED PHRASES -->
+<div class="section">
+  <div class="container">
+    <div class="section-badge">🚀 Part 2</div>
+    <h2>Advanced Phrases</h2>
+    <p class="section-intro">Ready for the next level? These will make you sound like a pro!</p>
+    <div class="phrase-grid">
+      <div class="phrase-card">
+        <div class="phrase-num">Health & Safety</div>
+        <div class="phrase-en">Does this dish contain peanuts? I'm allergic.</div>
+        <div class="phrase-ru">В блюде есть арахис? У меня аллергия.</div>
+      </div>
+      <div class="phrase-card">
+        <div class="phrase-num">Restaurant</div>
+        <div class="phrase-en">Could you recommend something popular with locals?</div>
+        <div class="phrase-ru">Порекомендуете что-то популярное у местных?</div>
+      </div>
+      <div class="phrase-card">
+        <div class="phrase-num">Bargaining</div>
+        <div class="phrase-en">I saw the same thing at another stall for half the price.</div>
+        <div class="phrase-ru">Я видел то же самое вдвое дешевле.</div>
+        <div class="phrase-hint">Best bargaining argument!</div>
+      </div>
+      <div class="phrase-card">
+        <div class="phrase-num">Transport</div>
+        <div class="phrase-en">How long does it take to get there?</div>
+        <div class="phrase-ru">Сколько времени добираться туда?</div>
+      </div>
+      <div class="phrase-card">
+        <div class="phrase-num">Hotel</div>
+        <div class="phrase-en">The air conditioning in my room isn't working properly.</div>
+        <div class="phrase-ru">Кондиционер в моём номере плохо работает.</div>
+      </div>
+      <div class="phrase-card teal">
+        <div class="phrase-num">Social</div>
+        <div class="phrase-en">Your country is absolutely beautiful — I'd love to come back someday.</div>
+        <div class="phrase-ru">Ваша страна невероятно красива!</div>
+        <div class="phrase-hint">Locals will love this! 😊</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 3: UNIVERSAL PHRASES -->
+<div class="section">
+  <div class="container">
+    <div class="section-badge">🛠️ Part 3</div>
+    <h2>Universal Phrases</h2>
+    <p class="section-intro">These 10 phrases work in almost any situation. Memorise them!</p>
+    <div class="phrase-grid">
+      <div class="phrase-card">
+        <div class="phrase-num">Didn't understand?</div>
+        <div class="phrase-en">Sorry, could you say that again more slowly?</div>
+        <div class="phrase-ru">Не могли бы вы повторить помедленнее?</div>
+      </div>
+      <div class="phrase-card">
+        <div class="phrase-num">Can't remember?</div>
+        <div class="phrase-en">Could you write it down for me?</div>
+        <div class="phrase-ru">Не могли бы вы написать это?</div>
+      </div>
+      <div class="phrase-card">
+        <div class="phrase-num">Checking price</div>
+        <div class="phrase-en">Just to confirm — is everything included in the price?</div>
+        <div class="phrase-ru">Просто уточню — всё включено в цену?</div>
+      </div>
+      <div class="phrase-card">
+        <div class="phrase-num">Shops & Markets</div>
+        <div class="phrase-en">No, thank you, I'm just looking.</div>
+        <div class="phrase-ru">Нет, спасибо, я просто смотрю.</div>
+        <div class="phrase-hint">Saves you from pushy sellers!</div>
+      </div>
+      <div class="phrase-card">
+        <div class="phrase-num">Lost?</div>
+        <div class="phrase-en">Could you help me? I'm a bit lost.</div>
+        <div class="phrase-ru">Не могли бы вы помочь? Я немного заблудился.</div>
+      </div>
+      <div class="phrase-card">
+        <div class="phrase-num">Payment</div>
+        <div class="phrase-en">Do you accept credit cards or cash only?</div>
+        <div class="phrase-ru">Вы принимаете карты или только наличные?</div>
+      </div>
+      <div class="phrase-card">
+        <div class="phrase-num">Meeting people</div>
+        <div class="phrase-en">Nice to meet you! I'm from Russia.</div>
+        <div class="phrase-ru">Приятно познакомиться! Я из России.</div>
+      </div>
+      <div class="phrase-card teal">
+        <div class="phrase-num">💡 Magic phrase</div>
+        <div class="phrase-en">Could you...?</div>
+        <div class="phrase-ru">Не могли бы вы...?</div>
+        <div class="phrase-hint">Polite in ANY situation — use it everywhere!</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 4: EXERCISE -->
+<div class="section">
+  <div class="container">
+    <div class="section-badge">✏️ Part 4</div>
+    <h2>Fill in the Blank</h2>
+    <p class="section-intro">Read each situation and choose the correct phrase from the list below.</p>
+
+    <div class="exercise-box">
+      <p style="font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:12px;">📋 Phrases to use:</p>
+      <div class="phrase-bank">
+        <div class="phrase-chip"><span class="chip-letter">A</span> Could you help me?</div>
+        <div class="phrase-chip"><span class="chip-letter">B</span> Is it spicy?</div>
+        <div class="phrase-chip"><span class="chip-letter">C</span> How much does it cost?</div>
+        <div class="phrase-chip"><span class="chip-letter">D</span> Could you write this for me?</div>
+        <div class="phrase-chip"><span class="chip-letter">E</span> Sorry, could you repeat please?</div>
+        <div class="phrase-chip"><span class="chip-letter">F</span> Can I have this, please?</div>
+        <div class="phrase-chip"><span class="chip-letter">G</span> Do you have Wi-Fi? What's the password?</div>
+        <div class="phrase-chip"><span class="chip-letter">H</span> How long does it take to get there?</div>
+      </div>
+
+      <div class="situation">
+        <div class="sit-header">
+          <span class="sit-emoji">🏨</span>
+          <div>
+            <div class="sit-num">Situation 1</div>
+            <div class="sit-text">You just checked into your hotel and want to message your friend on WhatsApp. You walk up to the reception desk and ask:</div>
+          </div>
+        </div>
+        <span class="sit-blank">"________________________?"</span>
+      </div>
+
+      <div class="situation">
+        <div class="sit-header">
+          <span class="sit-emoji">🛺</span>
+          <div>
+            <div class="sit-num">Situation 2</div>
+            <div class="sit-text">You get into a tuk-tuk and want to ride to the beach. Before you agree, you ask the driver:</div>
+          </div>
+        </div>
+        <span class="sit-blank">"________________________?"</span>
+      </div>
+
+      <div class="situation">
+        <div class="sit-header">
+          <span class="sit-emoji">🍜</span>
+          <div>
+            <div class="sit-num">Situation 3</div>
+            <div class="sit-text">At a street café you see a delicious-looking dish on the table next to you. You point at it and say to the waiter:</div>
+          </div>
+        </div>
+        <span class="sit-blank">"________________________?"</span>
+      </div>
+
+      <div class="situation">
+        <div class="sit-header">
+          <span class="sit-emoji">🌶️</span>
+          <div>
+            <div class="sit-num">Situation 4</div>
+            <div class="sit-text">The waiter brings your food, but you are worried it might be too hot to eat. You ask:</div>
+          </div>
+        </div>
+        <span class="sit-blank">"________________________?"</span>
+      </div>
+
+      <div class="situation">
+        <div class="sit-header">
+          <span class="sit-emoji">🛍️</span>
+          <div>
+            <div class="sit-num">Situation 5</div>
+            <div class="sit-text">At the market you spot a cool bracelet. Before buying it, you ask the seller:</div>
+          </div>
+        </div>
+        <span class="sit-blank">"________________________?"</span>
+      </div>
+
+      <div class="situation">
+        <div class="sit-header">
+          <span class="sit-emoji">🗺️</span>
+          <div>
+            <div class="sit-num">Situation 6</div>
+            <div class="sit-text">You leave the café and cannot find your hotel. You walk up to a stranger on the street:</div>
+          </div>
+        </div>
+        <span class="sit-blank">"________________________? Where is the hotel?"</span>
+      </div>
+
+      <div class="situation">
+        <div class="sit-header">
+          <span class="sit-emoji">🔊</span>
+          <div>
+            <div class="sit-num">Situation 7</div>
+            <div class="sit-text">The stranger gives you directions but speaks very fast and you understand nothing:</div>
+          </div>
+        </div>
+        <span class="sit-blank">"________________________?"</span>
+      </div>
+
+      <div class="situation">
+        <div class="sit-header">
+          <span class="sit-emoji">✍️</span>
+          <div>
+            <div class="sit-num">Situation 8</div>
+            <div class="sit-text">The stranger explains again — but you are still not sure you will remember the way. You ask them:</div>
+          </div>
+        </div>
+        <span class="sit-blank">"________________________?"</span>
+      </div>
+
+      <details class="answer-key">
+        <summary>✅ Answer Key — click to reveal</summary>
+        <table>
+          <tr><td>1.</td><td><strong>G</strong> — Do you have Wi-Fi? What's the password?</td></tr>
+          <tr><td>2.</td><td><strong>H</strong> — How long does it take to get there?</td></tr>
+          <tr><td>3.</td><td><strong>F</strong> — Can I have this, please?</td></tr>
+          <tr><td>4.</td><td><strong>B</strong> — Is it spicy?</td></tr>
+          <tr><td>5.</td><td><strong>C</strong> — How much does it cost?</td></tr>
+          <tr><td>6.</td><td><strong>A</strong> — Could you help me?</td></tr>
+          <tr><td>7.</td><td><strong>E</strong> — Sorry, could you repeat please?</td></tr>
+          <tr><td>8.</td><td><strong>D</strong> — Could you write this for me?</td></tr>
+        </table>
+      </details>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 5: FACTS -->
+<div class="section" style="border-bottom:none;">
+  <div class="container">
+    <div class="section-badge">🌏 Part 5</div>
+    <h2>7 Fascinating Facts About Thailand</h2>
+    <p class="section-intro">Learn about the country whose language you're speaking!</p>
+
+    <div class="fact-card">
+      <img class="fact-img" src="https://images.unsplash.com/photo-1577493340887-b7bfff550145?w=600&q=80" alt="White elephant Thailand" onerror="this.style.background='#e8d5a3';this.src=''">
+      <div class="fact-body">
+        <div class="fact-num">01</div>
+        <div class="fact-title">🐘 The Land of White Elephants</div>
+        <div class="fact-text">White elephants are considered sacred and belong to the King by law. Giving one as a "gift" was historically used to ruin enemies — so expensive to care for, it could bankrupt anyone. That's where the phrase "a white elephant gift" comes from!</div>
+      </div>
+    </div>
+
+    <div class="fact-card reverse">
+      <img class="fact-img" src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=600&q=80" alt="Thailand smiling people" onerror="this.style.background='#d4e8e0';this.src=''">
+      <div class="fact-body">
+        <div class="fact-num">02</div>
+        <div class="fact-title">😄 13 Types of Smiles</div>
+        <div class="fact-text">Thailand is called "The Land of Smiles" — but Thai people actually have 13 different smiles, each with its own meaning. Only 3 of them mean happiness! There are smiles for sadness, disagreement, embarrassment, and even bad intentions. So not every smile means "I'm happy"!</div>
+      </div>
+    </div>
+
+    <div class="fact-card">
+      <img class="fact-img" src="https://images.unsplash.com/photo-1555400038-63f5ba517a47?w=600&q=80" alt="Thailand temple golden" onerror="this.style.background='#f5edd6';this.src=''">
+      <div class="fact-body">
+        <div class="fact-num">03</div>
+        <div class="fact-title">🙅 Never Touch Someone's Head</div>
+        <div class="fact-text">The head is the most sacred part of the body in Thai culture. Touching anyone's head — even a child's — is deeply disrespectful. On the other hand, pointing your feet at a person or a temple is also a serious insult, as feet are considered the lowest part of the body.</div>
+      </div>
+    </div>
+
+    <div class="fact-card reverse">
+      <img class="fact-img" src="https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=600&q=80" alt="Thailand island beach" onerror="this.style.background='#c8e8f0';this.src=''">
+      <div class="fact-body">
+        <div class="fact-num">04</div>
+        <div class="fact-title">🌊 Over 1,400 Islands</div>
+        <div class="fact-text">Thailand has over 1,400 islands. Some are world-famous, but hundreds are completely uninhabited jungle. Several Hollywood movies were filmed there — including "The Beach" with Leonardo DiCaprio. Most tourists only ever visit a handful!</div>
+      </div>
+    </div>
+
+    <div class="fact-card">
+      <img class="fact-img" src="https://images.unsplash.com/photo-1563492065599-3520f775eeed?w=600&q=80" alt="Wat Phra Kaew Bangkok temple" onerror="this.style.background='#f5e8c8';this.src=''">
+      <div class="fact-body">
+        <div class="fact-num">05</div>
+        <div class="fact-title">🕌 40,000 Buddhist Temples</div>
+        <div class="fact-text">Thailand has approximately 40,000 Buddhist temples — more than there are McDonald's in the entire world! The most famous, Wat Phra Kaew in Bangkok, is home to the legendary Emerald Buddha — which is actually made of jade, not emerald!</div>
+      </div>
+    </div>
+
+    <div class="fact-card reverse">
+      <img class="fact-img" src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=600&q=80" alt="Muay Thai boxing Thailand" onerror="this.style.background='#e8c8c8';this.src=''">
+      <div class="fact-body">
+        <div class="fact-num">06</div>
+        <div class="fact-title">🥊 Muay Thai: The Art of 8 Limbs</div>
+        <div class="fact-text">Muay Thai has existed for over 2,000 years and was originally a fighting art for the Thai army. Unlike regular boxing, it allows knees, elbows, fists AND feet — giving it the nickname "the art of eight limbs". Many Thai children start training as young as 6 or 7 years old!</div>
+      </div>
+    </div>
+
+    <div class="fact-card-single">
+      <img class="fact-single-img" src="https://images.unsplash.com/photo-1583416750470-965b2707b355?w=900&q=80" alt="Thailand floating market" onerror="this.style.background='#c8d8e8';this.style.height='200px'">
+      <div class="fact-single-body">
+        <div class="fact-num">07</div>
+        <div class="fact-title">🛶 Floating Markets</div>
+        <div class="fact-text">In Thailand, there are markets built on the water — vendors sell food, fruit and souvenirs directly from boats. The most famous, Damnoen Saduak near Bangkok, is over 100 years old. Historically, rivers and canals were the main "roads" of the country, so all trade happened on water. Today it's one of the most photogenic spots in all of Thailand!</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <span class="flag">🇹🇭</span>
+  <p>English Lesson · Thailand · Good luck on your trip!</p>
+  <p style="margin-top:8px;">Remember: Sawadee kha/khrap! 🙏</p>
+</div>
+
+</body>
+</html>
